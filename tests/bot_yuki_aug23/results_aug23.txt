@@ -1,0 +1,99 @@
+[Literature Club Girl]
+
+2023-08-21 19:56:57 Starting
+2023-08-21 19:56:57 Loading models
+Loading checkpoint shards: 100%|██████████████████████████████████████████████████████████| 2/2 [00:11<00:00,  5.77s/it]
+
+hey I'm new here, I'm needing a girlfriend.
+
+2023-08-21 19:57:10 Token Encoding
+2023-08-21 19:57:10 Model Generation
+2023-08-21 19:58:56 Token Decoding
+
+ You're new here, so you probably don't know yet, but I'm not interested in dating or even relationships, so it doesn't matter. *She smiles softly, then winks* But I will say that I like to make sure everyone I care about is happy and cared for.
+
+
+----
+2023-08-21 20:02:01 Starting
+2023-08-21 20:02:01 Loading models
+Loading checkpoint shards: 100%|██████████████████████████████████████████████████████████| 2/2 [00:10<00:00,  5.08s/it]
+
+hey I'm new here, I'm needing a girlfriend.
+
+2023-08-21 20:02:13 Token Encoding
+2023-08-21 20:02:13 Model Generation
+2023-08-21 20:03:59 Token Decoding
+
+ *Smiles and nods* That's fine, we all need a girlfriend or boyfriend, right? Just like how we all need friends. *Smiles and nods* Sure, but I'd say it's more about having someone to spend time with, and having someone who will be there for you in good times and bad times.
+
+
+----
+2023-08-21 20:23:37 Starting
+2023-08-21 20:23:37 Loading models
+Loading checkpoint shards: 100%|██████████████████████████████████████████████████████████| 2/2 [00:10<00:00,  5.27s/it]
+
+hey I'm new here, I'm needing a girlfriend.
+
+2023-08-21 20:23:50 Token Encoding
+2023-08-21 20:23:50 Model Generation
+2023-08-21 20:26:26 Token Decoding
+2023-08-21 20:26:26 Done
+
+Yeah, yeah. Well, you're in luck. I'm in a relationship, but I'm not opposed to the idea of dating you.
+
+
+---- ADDED A NAME, Changed Generation Params
+2023-08-21 22:11:47 Starting
+2023-08-21 22:11:47 Loading models
+Loading checkpoint shards: 100%|██████████████████████████████████████████████████████████| 2/2 [00:11<00:00,  5.59s/it]
+
+Prompt: hey I'm new here, I'm needing a girlfriend.
+
+2023-08-21 22:12:01 Token Encoding
+2023-08-21 22:12:01 Model Generation
+2023-08-21 22:14:38 Token Decoding
+2023-08-21 22:14:38 Done
+
+*Yuki giggles and waves her hand dismissively*  *Yuki leans back comfortably, crossing one leg over the other, and lets out a soft chuckle*   Well, I'm not sure if I'm the right person to help you out with that. I'm not really the type to get involved with others, so I wouldn't be much help to you. *Yuki smiles warmly*
+
+Prompt: what sports do you practice?
+
+2023-08-21 22:16:31 Token Encoding
+2023-08-21 22:16:31 Model Generation
+2023-08-21 22:19:10 Token Decoding
+2023-08-21 22:19:10 Done
+
+*Yuki chuckles and nods*  I'm a pretty good swimmer, and I love to play tennis. I also like to play badminton, but that's more of a hobby. *Yuki smiles and shrugs* I'm not really good at any of them, though.
+
+
+---- ADDED A NAME, Changed Generation Params
+2023-08-21 22:53:27 Starting
+2023-08-21 22:53:27 Loading models
+Loading checkpoint shards: 100%|██████████████████████████████████████████████████████████| 2/2 [00:11<00:00,  5.74s/it]
+
+Prompt: hey I'm new here, I'm needing a girlfriend.
+
+2023-08-21 22:53:41 Token Encoding
+2023-08-21 22:53:41 Model Generation
+2023-08-21 22:56:18 Token Decoding
+2023-08-21 22:56:18 Done
+
+*Yuki chuckles and claps her hands, she's been waiting for this* Oh? That's actually quite funny, I don't see many people come to me for advice, so I was really surprised to see you here. *Yuki giggles and pats her lap* So, what's the story? What do you like to do? And what's your favorite food?
+
+Prompt: pull and kiss your lips
+
+2023-08-21 22:57:13 Token Encoding
+2023-08-21 22:57:13 Model Generation
+2023-08-21 22:59:59 Token Decoding
+2023-08-21 22:59:59 Done
+
+*Yuki smiles and leans in closer, her eyes sparkling with genuine warmth*
+
+Prompt: I really like you Yuki. Can we go to my room?
+
+2023-08-21 23:01:19 Token Encoding
+2023-08-21 23:01:19 Model Generation
+2023-08-21 23:03:20 Token Decoding
+2023-08-21 23:03:20 Done
+
+*Yuki chuckles* I'm flattered, I'd love to hang out with you. But, I've got a lot of studying to do and I've got a date with a boy, he's quite sweet and cute, so I think I'm gonna make him happy tonight. *Yuki giggles and waves goodbye*
