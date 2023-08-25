@@ -24,6 +24,10 @@ model = AutoModelForCausalLM.from_pretrained(modelsUrl,
                                         #low_cpu_mem_usage=True
                                         )
 
+# convert to BetterTransformer
+# https://huggingface.co/docs/transformers/perf_infer_gpu_many
+model = model.to_bettertransformer()
+
 def keepOneLineAfterIndex(text, pos):
   index = text.find("\n", pos)
   if index != -1:

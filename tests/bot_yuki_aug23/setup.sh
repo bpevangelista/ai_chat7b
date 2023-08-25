@@ -8,4 +8,4 @@ sudo apt install python3-pip
 #pip3 install --upgrade --no-deps --force-reinstall --pre torch torchvision torchaudio cudatoolkit=11.4.0 --index-url https://download.pytorch.org/whl/nightly/cpu
 
 pip3 install torch torchvision torchaudio
-pip3 install accelerate transformers
+pip3 install transformers accelerate optimum
