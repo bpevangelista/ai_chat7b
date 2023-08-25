@@ -7,8 +7,8 @@ if ! git lfs &> /dev/null; then
 fi
 
 if [[ -z "$1" ]] || [[ -z "$2" ]]; then
-  echo "usage: hugging_s3_packer EleutherAI/gpt-j-6b float16"
-  echo "usage: hugging_s3_packer EleutherAI/gpt-j-6b main"
+  echo "usage: pack_hugging_for_s3 EleutherAI/gpt-j-6b float16"
+  echo "usage: pack_hugging_for_s3 EleutherAI/gpt-j-6b main"
   exit 1
 fi
 
