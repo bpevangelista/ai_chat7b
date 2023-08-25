@@ -1,49 +1,48 @@
 import json
+import requests
+
 import sagemaker, boto3
 from sagemaker.huggingface import get_huggingface_llm_image_uri
 from sagemaker.huggingface import HuggingFaceModel
 
+def sage_deploy_model():
+    sage_context = sagemaker.Session()
+    sage_bucket = sage_context.default_bucket()
 
-sage_context = sagemaker.Session()
-sage_bucket = sage_context.default_bucket()
+    sage_context = sagemaker.Session(default_bucket=sage_bucket)
 
-#try:
-#role = sagemaker.get_execution_role()
-#except ValueError:
-#    iam = boto3.client('iam')
-#    role = iam.get_role(RoleName='sagemaker_execution_role')['Role']['Arn']
+    llm_image = get_huggingface_llm_image_uri(
+        "huggingface",
+        version="0.9.3"
+    )
+    print(f"llm image uri: {llm_image}")
 
-sage_context = sagemaker.Session(default_bucket=sage_bucket)
+    env_config = {
+        #'HF_MODEL_ID': "PygmalionAI/pygmalion-6b", # model_id from hf.co/models
+        'HF_TASK': 'text-generation',
+        'SM_NUM_GPUS': "1",
+        'MAX_INPUT_LENGTH': "96",
+        'MAX_TOTAL_TOKENS': "1024",
+    }
 
-#print(f"sagemaker role arn: {role}")
-#print(f"sagemaker session region: {sage_context.boto_region_name}")
+    llm_model = HuggingFaceModel(
+        model_data="s3://llms_sep2023/pygmalion-6b.tar.gz",
 
-llm_image = get_huggingface_llm_image_uri(
-    "huggingface",
-    version="0.9.3"
-)
+        role="SageMakerFullAccessRole", # Name of my AWS role
+        #image_uri=llm_image,
+        env=env_config,
+        transformers_version="4.26",                           # Transformers version used
+        pytorch_version="1.13",                                # PyTorch version used
+        py_version='py39'
+    )
 
-print(f"llm image uri: {llm_image}")
+    predictor = llm_model.deploy(
+        initial_instance_count=1,
+        #instance_type="p3.2xlarge",        # 3.02 usd
+        instance_type="ml.p2.xlarge",       # 0.90 usd
+        container_startup_health_check_timeout=360, # 6min
+    )
 
-config = {
-    #'HF_MODEL_ID': "PygmalionAI/pygmalion-6b", # model_id from hf.co/models
-    'model_data': 's3:{location_of_your_model}',
-    
-    'HF_TASK': 'text-generation',
-    'SM_NUM_GPUS': "1",
-    'MAX_INPUT_LENGTH': "96",
-    'MAX_TOTAL_TOKENS': "1024",
-}
+    return predictor
 
-llm_model = HuggingFaceModel(
-    role="SageMakerFullAccessRole",
-    image_uri=llm_image,
-    env=config
-)
-
-llm = llm_model.deploy(
-    initial_instance_count=1,
-    #instance_type="p3.2xlarge",    # 3.02 usd
-    instance_type="ml.p2.xlarge",    # 0.90 usd
-    container_startup_health_check_timeout=300,
-)
+#predictor = sage_deploy_model()
