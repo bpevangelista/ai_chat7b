@@ -8,6 +8,18 @@ role = "SageMakerFullAccessRole"
 s3_bucket_name = "sagemaker-hf-inference"
 
 def create_endpoint(model_name, instance_type):
+    print(f"{datetime.now()} Cleaning up endpoints...")
+    try:
+        sagemaker_session.delete_endpoint(f"{model_name}-endpoint")
+    except Exception as e:
+        print(f"  {e}")
+
+    try:
+        sagemaker_session.delete_endpoint_config(f"{model_name}-config")
+        sagemaker_session.delete_model(model_name)
+    except Exception as e:
+        print(f"  {e}")
+
     print(f"{datetime.now()} Retrieving Image...")
     image_uri = image_uris.retrieve(
         framework="huggingface", # huggingface, pytorch, tensorflow, djl-deepspeed

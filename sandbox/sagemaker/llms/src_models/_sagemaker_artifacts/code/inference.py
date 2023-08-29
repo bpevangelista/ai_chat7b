@@ -9,7 +9,9 @@ def model_fn(model_dir):
     device = "cuda"
 
     print(f'{datetime.now()} BEBE torch.load...')
-    model = torch.load(os.path.join(model_dir, 'pytorch_model.pt'))
+    model_path = os.path.join(model_dir, 'pytorch_model.pt')
+    print(f'  {model_path}')
+    model = torch.load(model_path)
     tokenizer = AutoTokenizer.from_pretrained(model_dir)
 
     print(f'{datetime.now()} BEBE pipeline...')

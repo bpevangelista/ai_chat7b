@@ -46,6 +46,9 @@ def write_pickled(model, tokenizer):
         torch.save(model, torch_model_path)
     tokenizer.save_pretrained(model_dst_folder)
 
+    # Sanity check
+    model = torch.load(torch_model_path)
+
 def copy_artifacts():
     print(f'{datetime.now()} Copying required artifacts...')
     print(f'  ../_sagemaker_artifacts-->{model_dst_folder}')
