@@ -14,6 +14,13 @@ def model_fn(model_dir):
     model = torch.load(model_path)
     tokenizer = AutoTokenizer.from_pretrained(model_dir)
 
+    if torch.cuda.is_available():
+        print(f'{datetime.now()} BEBE CUDA Available')
+        device = 0
+    else:
+        print(f'{datetime.now()} BEBE CUDA NOT Available')
+        device = -1
+
     print(f'{datetime.now()} BEBE pipeline...')
     generation = pipeline(
         task="text-generation", model=model, tokenizer=tokenizer, device=device

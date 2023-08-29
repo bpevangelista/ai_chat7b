@@ -49,7 +49,7 @@ def copy_artifacts():
     shutil.copytree('../_sagemaker_artifacts', model_dst_folder, dirs_exist_ok=True)
 
 def upload_to_s3_raw():
-    print(f'{datetime.now()} Uploading to S3...')
+    print(f'{datetime.now()} Uploading raw to S3...')
     print(f'  s3://{os.path.join(s3_bucket_name, model_dst_folder)}/')
     for root, _, files in os.walk(model_dst_folder):
         for file in files:
@@ -67,7 +67,7 @@ def upload_to_s3_compressed():
     with tarfile.open(tar_name, "w:gz") as tar:
         tar.add(model_dst_folder, arcname=os.path.sep)
 
-    print(f'{datetime.now()} Uploading to S3...')
+    print(f'{datetime.now()} Uploading compressed to S3...')
     s3_bucket.upload_file(tar_name, os.path.basename(tar_name))
 
 model = load_model()
@@ -75,4 +75,4 @@ tokenizer = load_tokenizer()
 write_pickled(model, tokenizer)
 copy_artifacts()
 upload_to_s3_compressed()
-#upload_to_s3_raw()
+upload_to_s3_raw()

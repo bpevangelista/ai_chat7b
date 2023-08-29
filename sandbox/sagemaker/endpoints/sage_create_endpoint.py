@@ -30,6 +30,7 @@ def create_endpoint(model_name, instance_type):
         image_scope="inference",
         base_framework_version="pytorch2.0.0",
     )
+    print(f"  {image_uri}")
 
     print(f"{datetime.now()} Creating Model...")
     sagemaker_model = sagemaker_session.create_model(
@@ -39,6 +40,11 @@ def create_endpoint(model_name, instance_type):
             # https://docs.aws.amazon.com/sagemaker/latest/dg/pre-built-containers-frameworks-deep-learning.html
             image_uri=image_uri,
             model_data_url=f"s3://{s3_bucket_name}/{model_name}.tar.gz",
+            #model_data_url={
+            #    "CompressionType": "None",
+            #    "S3DataType": "S3Prefix",
+            #    "S3Uri": f"s3://{s3_bucket_name}/{model_name}/",
+            #},
             env={
             }
         ),
