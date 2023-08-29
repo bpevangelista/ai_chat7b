@@ -39,15 +39,9 @@ def write_pickled(model, tokenizer):
     os.makedirs(model_dst_folder, exist_ok=True)
 
     torch_model_path = os.path.join(model_dst_folder, 'pytorch_model.pt')
-    if os.path.exists(torch_model_path):
-        print('  already done')
-    else:
-        #model.save_pretrained(model_dst_folder)
-        torch.save(model, torch_model_path)
+    #model.save_pretrained(model_dst_folder)
+    torch.save(model, torch_model_path)
     tokenizer.save_pretrained(model_dst_folder)
-
-    # Sanity check
-    model = torch.load(torch_model_path)
 
 def copy_artifacts():
     print(f'{datetime.now()} Copying required artifacts...')
