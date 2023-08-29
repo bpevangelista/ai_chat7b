@@ -39,8 +39,8 @@ cd "$REPO_FOLDER"
 # copy requirements file
 echo -e "\ncreating requirements.txt..."
 if [[ ! -f "./code/requirements.txt" ]]; then
-  mkdir code &>/dev/null
-  cp ../../requirements.txt ./code/requirements.txt
+  mkdir sagemaker_requirements &>/dev/null
+  cp ../../requirements.txt ./sagemaker_requirements/requirements.txt
 else
   echo "  already done"
 fi
