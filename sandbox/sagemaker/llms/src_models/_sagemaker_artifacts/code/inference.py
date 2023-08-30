@@ -6,7 +6,7 @@ from transformers import AutoTokenizer, pipeline
 
 def model_fn(model_dir):
     print(f'{datetime.now()} BEBE model_fn...')
-    device = "cuda"
+    #device = "cuda"
 
     print(f'{datetime.now()} BEBE torch.load...')
     model_path = os.path.join(model_dir, 'pytorch_model.pt')

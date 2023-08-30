@@ -37,6 +37,8 @@ def deploy_sage_model():
         pytorch_version="2.0",
         py_version='py310'
     )
+    print(f"  {llm_model.serving_image_uri('us-west-2', 'ml.p2.xlarge')}")
+    quit()
 
     llm = llm_model.deploy(
         initial_instance_count=1,
