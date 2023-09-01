@@ -212,6 +212,7 @@ RUN curl -o /license.txt  https://aws-dlc-licenses.s3.amazonaws.com/pytorch-2.0/
 #	"numpy>=1.22.2,<1.23" \
 #	"sagemaker-huggingface-inference-toolkit<3"
 
+# BEBE
 # install Hugging Face libraries and its dependencies
 RUN pip install --no-cache-dir \
     accelerate==0.21.0 \
