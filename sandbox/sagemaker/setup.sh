@@ -4,6 +4,7 @@ sudo apt update
 sudo apt install unzip
 sudo apt install python3
 sudo apt install python3-pip
+sudo apt install docker
 
 # aws
 mkdir aws_temp && cd aws_temp

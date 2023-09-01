@@ -3,7 +3,7 @@ from datetime import datetime
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, GPTJForCausalLM
 
-print( f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} Starting')
+print( f'{datetime.now()} Starting')
 
 #device = torch.device("mps")
 #device = "mps"
@@ -11,7 +11,7 @@ print( f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} Starting')
 #modelsUrl = 'hakurei/lit-6B';
 modelsUrl = 'PygmalionAI/pygmalion-6b';
 
-print( f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} Loading models')
+print( f'{datetime.now()} Loading models')
 
 tokenizer = AutoTokenizer.from_pretrained(modelsUrl, device_map="auto")
 
@@ -21,7 +21,7 @@ model = AutoModelForCausalLM.from_pretrained(modelsUrl,
                                         #revision="float16",
                                         torch_dtype=torch.float16,
                                         #torch_dtype=torch.bfloat16,
-                                        #low_cpu_mem_usage=True
+                                        low_cpu_mem_usage=True
                                         )
 
 # convert to BetterTransformer
@@ -75,7 +75,7 @@ def model_generate(prompt, printPerf=True):
     #print("<START>" + prompt + "<END>\n\n")
 
     if (printPerf):
-        print( f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} Token Encoding')
+        print( f'{datetime.now()} Token Encoding')
 
     tokenizer.pad_token = tokenizer.eos_token
     tokensOut = tokenizer(prompt, return_tensors="pt") #pt == pytorch
@@ -86,7 +86,7 @@ def model_generate(prompt, printPerf=True):
     attention_mask = tokensOut.attention_mask.to('cuda')
 
     if (printPerf):
-        print( f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} Model Generation')
+        print( f'{datetime.now()} Model Generation')
 
     gen_tokens = model.generate(input_ids,
                                 do_sample=True, # For Quality & Perf, must be true
@@ -106,14 +106,14 @@ def model_generate(prompt, printPerf=True):
                                 attention_mask=attention_mask)
 
     if (printPerf):
-        print( f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} Token Decoding')
+        print( f'{datetime.now()} Token Decoding')
 
     gen_text = tokenizer.batch_decode(gen_tokens, 
         skip_special_tokens=True
         )
 
     if (printPerf):
-        print( f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")} Done')
+        print( f'{datetime.now()} Done')
 
     print(f'\n\n<START>{gen_text[0]}<END>\n\n')
     return gen_text[0]
