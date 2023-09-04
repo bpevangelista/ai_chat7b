@@ -8,6 +8,21 @@ import boto3
 client = boto3.client("sagemaker-runtime")
 chat_history = []
 
+custom_css = """
+.message {
+    padding-bottom: 2px !important;
+    padding-top: 2px !important;
+}
+
+.message-wrap {
+    gap: var(--spacing-xl) !important;
+}
+
+.user-row {
+    padding-top: 12px !important;
+}
+"""
+
 def invoke_llm_generation(message, chat_history):
     payload = {
         "message": message,
@@ -48,39 +63,28 @@ def send_streaming(history):
     history[-1][1] = reply
     return history
 
-custom_css = """
-.message {
-    padding-bottom: 2px !important;
-    padding-top: 2px !important;
-}
+def application():
+    greetings = first_message()
+    with gr.Blocks(css=custom_css) as app:
+        chatbot = gr.Chatbot(
+            value=[(None, greetings)],
+            bubble_full_width=False,
+        )
+        with gr.Row():
+            textbox = gr.Textbox(show_label=False, container=False, scale=3)
+            send = gr.Button("Send", scale=1)
 
-.message-wrap {
-    gap: var(--spacing-xl) !important;
-}
+        # funcion, inputs components, outputs components
+        send.click(send_message, [chatbot, textbox], [chatbot, textbox], queue=False).then(
+            send_streaming, chatbot, chatbot
+        )
 
-.user-row {
-    padding-top: 12px !important;
-}
-"""
+        textbox.submit(send_message, [chatbot, textbox], [chatbot, textbox], queue=False).then(
+            send_streaming, chatbot, chatbot
+        )
 
-greetings = first_message()
-with gr.Blocks(css=custom_css) as app:
-    chatbot = gr.Chatbot(
-        value=[(None, greetings)],
-        bubble_full_width=False,
-    )
-    with gr.Row():
-        textbox = gr.Textbox(show_label=False, container=False, scale=3)
-        send = gr.Button("Send", scale=1)
+    app.queue()
+    app.launch(share=True)
 
-    # funcion, inputs components, outputs components
-    send.click(send_message, [chatbot, textbox], [chatbot, textbox], queue=False).then(
-        send_streaming, chatbot, chatbot
-    )
-
-    textbox.submit(send_message, [chatbot, textbox], [chatbot, textbox], queue=False).then(
-        send_streaming, chatbot, chatbot
-    )
-
-app.queue()
-app.launch(share=True)
+# debug
+#application()
