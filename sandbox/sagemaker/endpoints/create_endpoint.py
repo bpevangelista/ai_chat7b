@@ -8,7 +8,8 @@ role = "SageMakerFullAccessRole"
 role_arn = "arn:aws:iam::459678513027:role/SageMakerFullAccessRole"
 s3_bucket_name = "sagemaker-hf-inference"
 
-sm_client = boto3.client('sagemaker')
+s3 = boto3.client("s3")
+sm_client = boto3.client("sagemaker")
 
 def create_endpoint(model_name, instance_type):
     print(f"{datetime.now()} Cleaning up endpoints...")
@@ -94,6 +95,14 @@ def create_endpoint(model_name, instance_type):
     print(f"  to-delete: aws sagemaker delete-endpoint --endpoint-name {model_name}-endpoint")
     return endpoint
 
+def upload_inference_code(model_name):
+    print(f"{datetime.now()} Uploading latest inference.py...")
+    code_file_name = "inference.py"
+    src_path = f"../llms/artifacts/{code_file_name}"
+    dst_path = f"{model_name}/{code_file_name}"
+    print(f"  {src_path}-->{dst_path}")
+    s3.upload_file(src_path, s3_bucket_name, dst_path)
+
 def main():
     if len(sys.argv) < 3 or len(sys.argv) > 4:
         print("usage: python create_endpoint.py [model_name] [dev|prod] [optional model_version]")
@@ -102,13 +111,12 @@ def main():
 
     model_prefix = sys.argv[1]
     dev_or_prod = sys.argv[2]
-    today_str = datetime.now().strftime('%b%d').lower()
+    today_str = datetime.now().strftime("%b%d").lower()
     model_suffix = sys.argv[3] if len(sys.argv) >= 4 else today_str
     model_name = f"{model_prefix}-{model_suffix}"
 
     print(f"{datetime.now()} Listing models...")
-    s3 = boto3.client('s3')
-    s3_objects = s3.list_objects_v2(Bucket=s3_bucket_name, Prefix=model_prefix, Delimiter='/')
+    s3_objects = s3.list_objects_v2(Bucket=s3_bucket_name, Prefix=model_prefix, Delimiter="/")
     s3_models = []
     if "CommonPrefixes" in s3_objects:
         s3_objects = s3_objects["CommonPrefixes"]
@@ -116,17 +124,19 @@ def main():
     print(f"  {s3_models}")
 
     if model_name in s3_models:
-        print(f"  using: {model_name}")
+        print(f"  --> {model_name} (selected)")
     else:
         print(f"  {model_name} not found!")
         exit(1)
 
     if dev_or_prod == "prod":
-        create_endpoint(model_name, instance_type="ml.p3.2xlarge")  # usd 3.8
+        instance_name = "ml.p3.2xlarge"     # usd 3.8
     else:
-        create_endpoint(model_name, instance_type="ml.g4dn.2xlarge")  # usd 0.94
-        # create_endpoint(model_name, instance_type="ml.g5.2xlarge") # usd 1.5
+        instance_name = "ml.g4dn.2xlarge"   # usd 0.94
+        #instance_name = "ml.g5.2xlarge"     # usd 0.94
+
+    print(f"  --> {instance_name} (selected)")
+    upload_inference_code(model_name)
+    create_endpoint(model_name, instance_type=instance_name)
 
 main()
-
-# Testing (may have issues with CUDA not being available)

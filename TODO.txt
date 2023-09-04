@@ -1,0 +1,6 @@
+
+**** sep01 (pto)
+= new instances added
+= everything running on CUDA
+= to_bettermodel() working
+= inference working like Yuki Bot

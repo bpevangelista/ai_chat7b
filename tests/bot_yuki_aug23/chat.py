@@ -3,20 +3,21 @@ from datetime import datetime
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, GPTJForCausalLM
 
-print( f'{datetime.now()} Starting')
+print( f"{datetime.now()} Starting")
 
 #device = torch.device("mps")
 #device = "mps"
-#modelsUrl = 'EleutherAI/gpt-j-6B';
-#modelsUrl = 'hakurei/lit-6B';
-modelsUrl = 'PygmalionAI/pygmalion-6b';
+#modelsUrl = "EleutherAI/gpt-j-6B";
+#modelsUrl = "hakurei/lit-6B";
+modelsUrl = "PygmalionAI/pygmalion-6b";
 
-print( f'{datetime.now()} Loading models')
+print( f"{datetime.now()} Loading models")
 
 tokenizer = AutoTokenizer.from_pretrained(modelsUrl, device_map="auto")
 
 model = AutoModelForCausalLM.from_pretrained(modelsUrl,
-                                        device_map="auto",
+                                        # should be "auto" but serialization fails
+                                        #device_map="auto",
                                         offload_folder="offload",
                                         #revision="float16",
                                         torch_dtype=torch.float16,
@@ -26,6 +27,7 @@ model = AutoModelForCausalLM.from_pretrained(modelsUrl,
 
 # convert to BetterTransformer
 # https://huggingface.co/docs/transformers/perf_infer_gpu_many
+model.to("cuda")
 model = model.to_bettertransformer()
 
 def keepOneLineAfterIndex(text, pos):
@@ -33,7 +35,7 @@ def keepOneLineAfterIndex(text, pos):
   if index != -1:
     return text[0 : index +1]
   else:
-    return f'{text}.\n'
+    return f"{text}.\n"
 
 def getLastReply(text, replyStartIndex, printReply):
     #reply = text[replyStartIndex + 1:]
@@ -58,7 +60,7 @@ def getLastReply(text, replyStartIndex, printReply):
         reply = reply[:index]
 
     # remove any garbage on end of string
-    end_phrase = {'.', '!', '?', '*'}
+    end_phrase = {".", "!", "?", "*"}
     index = max(reply.rfind(char) for char in end_phrase)
     if index != -1:
         reply = reply[:index+1]
@@ -75,18 +77,18 @@ def model_generate(prompt, printPerf=True):
     #print("<START>" + prompt + "<END>\n\n")
 
     if (printPerf):
-        print( f'{datetime.now()} Token Encoding')
+        print( f"{datetime.now()} Token Encoding")
 
     tokenizer.pad_token = tokenizer.eos_token
     tokensOut = tokenizer(prompt, return_tensors="pt") #pt == pytorch
 
     #input_ids = tokensOut.input_ids.to("mps")
-    #attention_mask = tokensOut.attention_mask.to('mps')
+    #attention_mask = tokensOut.attention_mask.to("mps")
     input_ids = tokensOut.input_ids.to("cuda")
-    attention_mask = tokensOut.attention_mask.to('cuda')
+    attention_mask = tokensOut.attention_mask.to("cuda")
 
     if (printPerf):
-        print( f'{datetime.now()} Model Generation')
+        print( f"{datetime.now()} Model Generation")
 
     gen_tokens = model.generate(input_ids,
                                 do_sample=True, # For Quality & Perf, must be true
@@ -106,42 +108,42 @@ def model_generate(prompt, printPerf=True):
                                 attention_mask=attention_mask)
 
     if (printPerf):
-        print( f'{datetime.now()} Token Decoding')
+        print( f"{datetime.now()} Token Decoding")
 
     gen_text = tokenizer.batch_decode(gen_tokens, 
         skip_special_tokens=True
         )
 
     if (printPerf):
-        print( f'{datetime.now()} Done')
+        print( f"{datetime.now()} Done")
 
-    print(f'\n\n<START>{gen_text[0]}<END>\n\n')
+    print(f"\n\n<START>{gen_text[0]}<END>\n\n")
     return gen_text[0]
 
 
 # Persona 1
-file = open('yuki_persona1.txt', 'r') # need to add bot-name, greeting (or scenario), 
+file = open("yuki_persona1.txt", "r") # need to add bot-name, greeting (or scenario), 
 file_contents = file.read()
 file.close()
 
 # Prompt
 chat_log = file_contents
-charLongName = 'Yuki Nagato'
-charShortName = 'Yuki'
+charLongName = "Yuki Nagato"
+charShortName = "Yuki"
 
 # ---- 
 userPrompt = f"hey I'm new here, I'm needing a girlfriend."
-print(f'\nPrompt: {userPrompt}\n')
+print(f"\nPrompt: {userPrompt}\n")
 
 
 while (True):
-    #chat_log = f'{chat_log}\nYou: *{userPrompt}*\n{charLongName}: '
-    chat_log = f'{chat_log}\nYou: *{userPrompt}*\n'
+    #chat_log = f"{chat_log}\nYou: *{userPrompt}*\n{charLongName}: "
+    chat_log = f"{chat_log}\nYou: *{userPrompt}*\n"
 
-    temp = model_generate(chat_log).replace('<BOT>:', f'{charLongName}:').replace('<BOT>', f'{charShortName}')
+    temp = model_generate(chat_log).replace("<BOT>:", f"{charLongName}:").replace("<BOT>", f"{charShortName}")
     
     reply = getLastReply(temp, len(chat_log), True)
     chat_log += reply
 
-    userPrompt = input('\n\nPrompt: ')
+    userPrompt = input("\n\nPrompt: ")
     print('')

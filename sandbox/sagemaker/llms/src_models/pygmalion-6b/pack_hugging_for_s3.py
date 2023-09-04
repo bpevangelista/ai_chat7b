@@ -27,13 +27,14 @@ def load_model():
                                             offload_folder="offload",
                                             #revision="float16",
                                             torch_dtype=torch.float16,
-                                            low_cpu_mem_usage=True
+                                            #low_cpu_mem_usage=True
                                             )
 
     print(f'{datetime.now()} Converting to Better...')
     # Convert to BetterTransformer
     # https://huggingface.co/docs/transformers/perf_infer_gpu_many
-    model.to_bettertransformer()
+    model = model.to("cuda")
+    model = model.to_bettertransformer()
     return model
 
 def load_tokenizer():
@@ -84,6 +85,6 @@ def main():
     copy_artifacts()
 
     #upload_to_s3_compressed()
-    upload_to_s3_raw()
+    #upload_to_s3_raw()
 
 main()
