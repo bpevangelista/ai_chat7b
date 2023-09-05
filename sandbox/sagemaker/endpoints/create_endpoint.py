@@ -133,7 +133,7 @@ def main():
         instance_name = "ml.p3.2xlarge"     # usd 3.8
     else:
         instance_name = "ml.g4dn.2xlarge"   # usd 0.94
-        #instance_name = "ml.g5.2xlarge"     # usd 0.94
+        #instance_name = "ml.g5.2xlarge"     # usd 1.5
 
     print(f"  --> {instance_name} (selected)")
     upload_inference_code(model_name)

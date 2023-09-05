@@ -1,11 +1,28 @@
-import gradio as gr
-import random
-import time
+import os, sys
+# web serving required
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
 
+import gradio as gr
 import json
 import boto3
 
-client = boto3.client("sagemaker-runtime")
+# huggingface
+if "HF_ENDPOINT" in os.environ:
+    client = boto3.client(
+        "sagemaker-runtime", 
+        region_name=os.environ["AWS_REGION"],
+        aws_access_key_id=os.environ["AWS_ACCESS_KEY"],
+        aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
+    )
+    aws_sagemaker_endpoint_name=os.environ["AWS_SAGEMAKER_ENDPOINT_NAME"]
+# local
+else:
+    if len(sys.argv) <= 1:
+        print("  usage python3 app.py aws_sagemaker_endpoint_name")
+        exit(1)
+    client = boto3.client("sagemaker-runtime")
+    aws_sagemaker_endpoint_name = sys.argv[1]
+
 chat_history = []
 
 custom_css = """
@@ -31,12 +48,11 @@ def invoke_llm_generation(message, chat_history):
         }
     }
     response = client.invoke_endpoint(
-        EndpointName="pygmalion-6b-sep01-endpoint",
+        EndpointName=aws_sagemaker_endpoint_name,
         ContentType="application/json",
         Body=json.dumps(payload)
     )
     body = response["Body"].read()
-
     blob = json.loads(body)
     reply = blob["reply"]
     new_history_entry = blob["new_history_entry"]
@@ -74,7 +90,7 @@ def application():
             textbox = gr.Textbox(show_label=False, container=False, scale=3)
             send = gr.Button("Send", scale=1)
 
-        # funcion, inputs components, outputs components
+        # fn, input components, output components
         send.click(send_message, [chatbot, textbox], [chatbot, textbox], queue=False).then(
             send_streaming, chatbot, chatbot
         )
@@ -83,8 +99,6 @@ def application():
             send_streaming, chatbot, chatbot
         )
 
-    app.queue()
-    app.launch(share=True)
+    app.queue().launch()
 
-# debug
-#application()
+application()
