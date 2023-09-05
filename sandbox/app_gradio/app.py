@@ -23,8 +23,6 @@ else:
     client = boto3.client("sagemaker-runtime")
     aws_sagemaker_endpoint_name = sys.argv[1]
 
-chat_history = []
-
 custom_css = """
 .message {
     padding-bottom: 2px !important;
@@ -65,7 +63,7 @@ def first_message():
 def send_message(history, message):
     return [history + [(message, None)], ""]
 
-def send_streaming(history):
+def send_streaming(history, chat_history):
     message = history[-1][0]
     history[-1][1] = ""
 
@@ -82,6 +80,7 @@ def send_streaming(history):
 def application():
     greetings = first_message()
     with gr.Blocks(css=custom_css) as app:
+        chat_history = gr.State([])
         chatbot = gr.Chatbot(
             value=[(None, greetings)],
             bubble_full_width=False,
@@ -92,11 +91,11 @@ def application():
 
         # fn, input components, output components
         send.click(send_message, [chatbot, textbox], [chatbot, textbox], queue=False).then(
-            send_streaming, chatbot, chatbot
+            send_streaming, [chatbot, chat_history], chatbot
         )
 
         textbox.submit(send_message, [chatbot, textbox], [chatbot, textbox], queue=False).then(
-            send_streaming, chatbot, chatbot
+            send_streaming, [chatbot, chat_history], chatbot
         )
 
     app.queue().launch()

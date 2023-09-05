@@ -26,6 +26,8 @@ def get_single_reply(text):
     text = text.replace("<USER>", "bud")
     text = text.replace("the user", "you")
     text = text.replace("the player", "you")
+    text = text.replace("the man", "you")
+    text = text.replace("the woman", "you")
 
     # stop before AI generates new prompt for user
     index = text.find("{user}:")
@@ -38,7 +40,7 @@ def get_single_reply(text):
     # remove incomplete generations at end (due to max length)
     end_phrase = {".", "!", "?", "*"}
     index = max(text.rfind(char) for char in end_phrase)
-    if text != -1:
+    if index != -1:
         text = text[:index + 1]
 
     # remove leading and trailing spaces
@@ -126,7 +128,7 @@ def predict_fn(request_body, model_tokenizer):
 
     output_tokens = model.generate(input_ids, **predict_params)
     output_texts = tokenizer.batch_decode(output_tokens, skip_special_tokens=True)
-    print('BEBE', output_texts)
+    print('BEBE decode', output_texts)
 
     # remove input from generation
     gen_text = output_texts[0][len(input_prompt):]
@@ -134,7 +136,7 @@ def predict_fn(request_body, model_tokenizer):
     gen_text = gen_text.replace("<BOT>:", f"{char.name}:")
 
     gen_text = get_single_reply(gen_text)
-    print('BEBE', gen_text)
+    print('BEBE reply', gen_text)
 
     return {
         "reply": gen_text,
