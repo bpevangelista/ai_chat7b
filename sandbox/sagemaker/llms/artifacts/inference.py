@@ -93,7 +93,7 @@ def model_fn(model_dir):
 def predict_fn(request_body, loaded_blob):
     print(f"{datetime.now()} BEBE predict_fn", request_body)
 
-    input_prompt = request_body["message"]
+    input_message = request_body["message"]
     chat_history = request_body["chat_history"]
     persona_id = request_body["persona_id"] if "persona_id" in request_body else None
     tokenizer = loaded_blob["tokenizer"]
@@ -102,14 +102,14 @@ def predict_fn(request_body, loaded_blob):
     persona = personas.get(persona_id, next(iter(personas.values())))
 
     # greeting shortcut
-    if input_prompt == "" and chat_history == "":
+    if input_message == "" and chat_history == "":
         return {
             "reply": persona.first_message,
             "new_history_entry": ""
         }
 
     # build prompt correctly
-    full_prompt = f"{persona.description}\n{chat_history}\nYou: *{input_prompt}*\n"
+    full_prompt = f"{persona.description}\n{chat_history}\nYou: *{input_message}*\n"
 
     tokenizer.pad_token = tokenizer.eos_token
     input_tokens = tokenizer(full_prompt, return_tensors="pt")
@@ -136,15 +136,16 @@ def predict_fn(request_body, loaded_blob):
     print('BEBE output_texts', output_texts)
 
     # remove input from generation
-    gen_text = output_texts[0][len(input_prompt):]
+    gen_text = output_texts[0][len(full_prompt):]
     # fix AI char name
     gen_text = gen_text.replace("<BOT>:", f"{persona.name}:")
     gen_text = get_single_reply(gen_text)
-    print('BEBE prompt/reply', f"You: *{input_prompt}*\n{gen_text}")
+    new_history_entry = f"You: *{input_message}*\n{gen_text}"
+    print('BEBE prompt/reply', new_history_entry)
 
     return {
         "reply": gen_text,
-        "new_history_entry": f"You: *{input_prompt}*\n{gen_text}"
+        "new_history_entry": new_history_entry,
     }
 
 # local debug
