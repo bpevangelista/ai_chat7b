@@ -113,7 +113,7 @@ def upload_latest_artifacts(model_name):
             s3.upload_file(src_path, s3_bucket_name, dst_path)
 
 def main():
-    if len(sys.argv) < 3 or len(sys.argv) > 4:
+    if len(sys.argv) < 3 or len(sys.argv) > 4 or sys.argv[2] not in ["dev", "prod"]:
         print("usage: python create_endpoint.py [model_name] [dev|prod] [optional model_version]")
         print("usage: python create_endpoint.py pygmalion-6b dev aug29")
         exit(1)

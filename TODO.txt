@@ -2,15 +2,12 @@
 **** sep11 (goal for this date)
 = client
   = client multi-persona support
-  = doesn't crash without initial message
-  = supports personas
-  = support custom persona
-  = better logging I can use to train
-
-= llama2 model online
-  = endpoint serving llama2 or pygmalion
+  = doesn't crash with endpoint offline
+  = support custom persona URL
+= server
   = endpoint multi-persona support
-
+  = better interaction logging for retraining
+  = create llama2 endpoint
 
 
 **** sep01 (pto)

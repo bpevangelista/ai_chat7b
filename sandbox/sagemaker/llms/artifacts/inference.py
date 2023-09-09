@@ -5,7 +5,7 @@ print(f"{datetime.now()} BEBE pip install packages...")
 import subprocess
 subprocess.run(["pip", "install", "-r", "requirements.txt"])
 
-import os, yaml
+import os, requests, sys, yaml
 import torch
 from transformers import AutoTokenizer
 
@@ -45,9 +45,24 @@ def get_single_reply(text):
     # remove leading and trailing spaces
     return text.strip()
 
+def copy_over_gdoc_persona():
+    gdoc_in_out_list = [
+        ("1tRxEPX-b5nInMVdsr7hkIGrQ4h8Jm-x1-97yZx6dzwQ", "custom1"),
+        ("18HHK9UrT-OoezSULAJjil8fzWvs8vu_SS2xq5yVyqtA", "custom2"),]
+
+    for gdoc_in_out in gdoc_in_out_list:
+        try:
+            gdoc_in = f"https://docs.google.com/document/d/{gdoc_in_out[0]}/export?format=txt"
+            gdoc_out = f"/tmp/{gdoc_in_out[1]}.yaml"
+            gdown.download(gdoc_in, gdoc_out)
+        except Exception as e:
+            print(f"  error: {gdoc_in}-->{gdoc_out} {e}")
+
 def load_all_personas():
     personas = {}
-    for yaml_file in [file for file in os.listdir() if file.endswith(".yaml")]:
+    listdir = os.listdir()
+    #listdir = os.listdir() + ["/tmp/" + file for file in os.listdir("/tmp/")] # current and /tmp/
+    for yaml_file in [file for file in listdir if file.endswith(".yaml")]:
         try:
             with open(yaml_file, "r") as yaml_data:
                 key = os.path.splitext(os.path.basename(yaml_file))[0]
@@ -56,7 +71,7 @@ def load_all_personas():
             print(f"  error reading: {filename} {e}")
     return personas
 
-def model_fn(model_dir):
+def model_fn(model_dir, debug_skip_model=False):
     print(f"{datetime.now()} BEBE model_fn", model_dir)
 
     if torch.cuda.is_available():
@@ -68,11 +83,14 @@ def model_fn(model_dir):
     print(f"{datetime.now()} BEBE torch.load...")
     model_path = os.path.join(model_dir, "pytorch_model.pt")
     print(f"  {model_path}")
-    model = torch.load(model_path)
+    model = None
+    if debug_skip_model == False:
+        model = torch.load(model_path)
     tokenizer = AutoTokenizer.from_pretrained(model_dir)
 
     print(f"{datetime.now()} BEBE To CUDA")
-    model = model.to("cuda:0")
+    if model != None:
+        model = model.to(device)
 
     print(f"{datetime.now()} BEBE garbage collect")
     torch.cuda.empty_cache()
@@ -80,6 +98,7 @@ def model_fn(model_dir):
     gc.collect()
 
     print(f"{datetime.now()} BEBE personas.load...")
+    #copy_over_gdoc_persona()
     personas = load_all_personas()
     print(f"{datetime.now()} BEBE personas", list(personas.keys()))
 
@@ -99,6 +118,24 @@ def predict_fn(request_body, loaded_blob):
     tokenizer = loaded_blob["tokenizer"]
     model = loaded_blob["model"]
     personas = loaded_blob["personas"]
+
+    # handle custom gdoc personas
+    custom_persona_to_gdoc = {
+        "custom1": "1tRxEPX-b5nInMVdsr7hkIGrQ4h8Jm-x1-97yZx6dzwQ",
+        "custom2": "18HHK9UrT-OoezSULAJjil8fzWvs8vu_SS2xq5yVyqtA",
+    }
+    if persona_id in custom_persona_to_gdoc:
+        gdoc_id = custom_persona_to_gdoc[persona_id]
+        response = requests.get(f"https://docs.google.com/document/d/{gdoc_id}/export?format=txt")
+        if response.status_code == 200:
+            try:
+                personas[persona_id] = ClassFromDict(yaml.safe_load(response.content))
+            except Exception as e:
+                print(f"  error yaml load: {gdoc_id} {e}")
+        else:
+            print(f"  error response: {gdoc_id} {response.status_code}")
+
+    # get correct persona
     persona = personas.get(persona_id, next(iter(personas.values())))
 
     # greeting shortcut
@@ -130,6 +167,10 @@ def predict_fn(request_body, loaded_blob):
         "attention_mask": input_attention_mask
     }
 
+    # debug early exit
+    if model == None:
+        return None
+
     output_tokens = model.generate(input_ids, **predict_params)
     output_texts = tokenizer.batch_decode(output_tokens, skip_special_tokens=True)
     # debug
@@ -149,17 +190,19 @@ def predict_fn(request_body, loaded_blob):
     }
 
 # local debug
-"""
-loaded_blob = model_fn("./")
-request_body = {
-    "message": "Ola Yuki!",
-    "chat_history": [],
-}
-predict_fn(request_body, loaded_blob)
+if __name__ == "__main__" and len(sys.argv) == 2 and sys.argv[1] == "debug":
+    loaded_blob = model_fn("./", True)
+    request_body = {
+        "message": "Ola Yuki!",
+        "chat_history": [],
+    }
+    predict_fn(request_body, loaded_blob)
 
-request_body["persona_id"] = "yuki_hinashi_en"
-predict_fn(request_body, loaded_blob)
+    request_body["persona_id"] = "custom2"
+    predict_fn(request_body, loaded_blob)
 
-request_body["persona_id"] = "yuki_hinashi_en2"
-predict_fn(request_body, loaded_blob)
-"""
+    request_body["persona_id"] = "yuki_hinashi_en"
+    predict_fn(request_body, loaded_blob)
+
+    request_body["persona_id"] = "yuki_hinashi_en2"
+    predict_fn(request_body, loaded_blob)

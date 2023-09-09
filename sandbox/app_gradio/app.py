@@ -98,6 +98,8 @@ with gr.Blocks(css=custom_css) as app:
     personas = [
         "yuki_hinashi_en",
         "yuki_hinashi_pt",
+        "custom1",
+        "custom2",
     ]
     with gr.Row():
         persona = gr.Dropdown(personas, value=personas[0], show_label=False, container=False, scale=3)
