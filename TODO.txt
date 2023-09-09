@@ -1,4 +1,18 @@
 
+**** sep11 (goal for this date)
+= client
+  = client multi-persona support
+  = doesn't crash without initial message
+  = supports personas
+  = support custom persona
+  = better logging I can use to train
+
+= llama2 model online
+  = endpoint serving llama2 or pygmalion
+  = endpoint multi-persona support
+
+
+
 **** sep01 (pto)
 = new instances added
 = everything running on CUDA

@@ -1,2 +1,3 @@
+src_models/llama2-7b/llama-2-7b*
 src_models/pygmalion-6b/pygmalion-6b*
 s3_packed_models/*

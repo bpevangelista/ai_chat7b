@@ -90,6 +90,8 @@ def model_generate(prompt, printPerf=True):
     if (printPerf):
         print( f"{datetime.now()} Model Generation")
 
+    # transformers.GenerationMixin
+    # https://huggingface.co/docs/transformers/v4.33.0/en/main_classes/text_generation#transformers.GenerationConfig
     gen_tokens = model.generate(input_ids,
                                 do_sample=True, # For Quality & Perf, must be true
                                 temperature=0.8, # higher == more random/non-sense
@@ -131,13 +133,8 @@ chat_log = file_contents
 charLongName = "Yuki Nagato"
 charShortName = "Yuki"
 
-# ---- 
-userPrompt = f"hey I'm new here, I'm needing a girlfriend."
-print(f"\nPrompt: {userPrompt}\n")
-
-
 while (True):
-    #chat_log = f"{chat_log}\nYou: *{userPrompt}*\n{charLongName}: "
+    userPrompt = input("\n\nPrompt: ")
     chat_log = f"{chat_log}\nYou: *{userPrompt}*\n"
 
     temp = model_generate(chat_log).replace("<BOT>:", f"{charLongName}:").replace("<BOT>", f"{charShortName}")
@@ -145,5 +142,4 @@ while (True):
     reply = getLastReply(temp, len(chat_log), True)
     chat_log += reply
 
-    userPrompt = input("\n\nPrompt: ")
     print('')

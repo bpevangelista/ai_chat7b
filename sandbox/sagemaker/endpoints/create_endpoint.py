@@ -1,5 +1,5 @@
 from datetime import datetime
-import sys
+import os, sys
 
 import boto3
 
@@ -95,13 +95,22 @@ def create_endpoint(model_name, instance_type):
     print(f"  to-delete: aws sagemaker delete-endpoint --endpoint-name {model_name}-endpoint")
     return endpoint
 
-def upload_inference_code(model_name):
+def upload_latest_inference(model_name):
     print(f"{datetime.now()} Uploading latest inference.py...")
     code_file_name = "inference.py"
     src_path = f"../llms/artifacts/{code_file_name}"
     dst_path = f"{model_name}/{code_file_name}"
     print(f"  {src_path}-->{dst_path}")
     s3.upload_file(src_path, s3_bucket_name, dst_path)
+
+def upload_latest_artifacts(model_name):
+    print(f"{datetime.now()} Uploading latest artifacts...")
+    for root, _, files in os.walk("../llms/artifacts"):
+        for file in files:
+            src_path = os.path.join(root, file)
+            dst_path = os.path.join(model_name, file)
+            print(f"  {src_path}-->{dst_path}")
+            s3.upload_file(src_path, s3_bucket_name, dst_path)
 
 def main():
     if len(sys.argv) < 3 or len(sys.argv) > 4:
@@ -132,11 +141,12 @@ def main():
     if dev_or_prod == "prod":
         instance_name = "ml.p3.2xlarge"     # usd 3.8
     else:
+        #instance_name = "ml.g4dn.xlarge"   # usd $0.7364 ($0.5260 as ec2)
         instance_name = "ml.g4dn.2xlarge"   # usd 0.94
         #instance_name = "ml.g5.2xlarge"     # usd 1.5
 
     print(f"  --> {instance_name} (selected)")
-    upload_inference_code(model_name)
+    upload_latest_artifacts(model_name)
     create_endpoint(model_name, instance_type=instance_name)
 
 main()

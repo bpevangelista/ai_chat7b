@@ -1,14 +1,13 @@
 from datetime import datetime
-
 # IMPORTANT
 # Update packages
 print(f"{datetime.now()} BEBE pip install packages...")
 import subprocess
 subprocess.run(["pip", "install", "-r", "requirements.txt"])
 
-import os
+import os, yaml
 import torch
-from transformers import AutoTokenizer, pipeline
+from transformers import AutoTokenizer
 
 class ClassFromDict(dict):
     def __getattr__(self, attr):
@@ -46,19 +45,19 @@ def get_single_reply(text):
     # remove leading and trailing spaces
     return text.strip()
 
+def load_all_personas():
+    personas = {}
+    for yaml_file in [file for file in os.listdir() if file.endswith(".yaml")]:
+        try:
+            with open(yaml_file, "r") as yaml_data:
+                key = os.path.splitext(os.path.basename(yaml_file))[0]
+                personas[key] = ClassFromDict(yaml.safe_load(yaml_data))
+        except yaml.YAMLError as e:
+            print(f"  error reading: {filename} {e}")
+    return personas
+
 def model_fn(model_dir):
-    print(f"{datetime.now()} BEBE model_fn...")
-
-    file = open("yuki_hinashi.txt", "r")
-    char_persona = file.read()
-    file.close()
-
-    char_blob = ClassFromDict({
-        "name": "Yuki Hinashi",
-        "description": char_persona,
-        "first_message": "Yuki Hinashi: *Yuki, a blond-haired, brown-eyed girl, leans against a wall, confidently flickering through a book. As you approaches, she raises an eyebrow with curiosity and amusement.* Hey there, you new here? *Yuki smirks, stepping closer with a graceful stride.* I'm Yuki Hinashi.",
-        "created_at": "",
-    })
+    print(f"{datetime.now()} BEBE model_fn", model_dir)
 
     if torch.cuda.is_available():
         print(f"{datetime.now()} BEBE CUDA Available")
@@ -69,7 +68,7 @@ def model_fn(model_dir):
     print(f"{datetime.now()} BEBE torch.load...")
     model_path = os.path.join(model_dir, "pytorch_model.pt")
     print(f"  {model_path}")
-    model = torch.load(model_path) # req transformers==4.31.0
+    model = torch.load(model_path)
     tokenizer = AutoTokenizer.from_pretrained(model_dir)
 
     print(f"{datetime.now()} BEBE To CUDA")
@@ -80,35 +79,40 @@ def model_fn(model_dir):
     import gc
     gc.collect()
 
+    print(f"{datetime.now()} BEBE personas.load...")
+    personas = load_all_personas()
+    print(f"{datetime.now()} BEBE personas", list(personas.keys()))
+
     print(f"{datetime.now()} BEBE done!")
     return {
-        "character": char_blob,
+        "personas": personas,
         "model": model,
         "tokenizer": tokenizer
     }
 
-def predict_fn(request_body, model_tokenizer):
+def predict_fn(request_body, loaded_blob):
     print(f"{datetime.now()} BEBE predict_fn", request_body)
 
-    input_text = request_body["message"]
+    input_prompt = request_body["message"]
     chat_history = request_body["chat_history"]
-    tokenizer = model_tokenizer["tokenizer"]
-    model = model_tokenizer["model"]
-    char = model_tokenizer["character"]
+    persona_id = request_body["persona_id"] if "persona_id" in request_body else None
+    tokenizer = loaded_blob["tokenizer"]
+    model = loaded_blob["model"]
+    personas = loaded_blob["personas"]
+    persona = personas.get(persona_id, next(iter(personas.values())))
 
     # greeting shortcut
-    if input_text == "" and chat_history == "":
+    if input_prompt == "" and chat_history == "":
         return {
-            "reply": char.first_message,
+            "reply": persona.first_message,
             "new_history_entry": ""
         }
 
-    # BEBE
-    input_prompt = f"{char.description}\n{chat_history}\nYou: *{input_text}*\n"
-    #print('BEBE', input_prompt)
+    # build prompt correctly
+    full_prompt = f"{persona.description}\n{chat_history}\nYou: *{input_prompt}*\n"
 
     tokenizer.pad_token = tokenizer.eos_token
-    input_tokens = tokenizer(input_prompt, return_tensors="pt")
+    input_tokens = tokenizer(full_prompt, return_tensors="pt")
 
     input_ids = input_tokens.input_ids.to("cuda:0")
     input_attention_mask = input_tokens.attention_mask.to("cuda:0")
@@ -128,17 +132,33 @@ def predict_fn(request_body, model_tokenizer):
 
     output_tokens = model.generate(input_ids, **predict_params)
     output_texts = tokenizer.batch_decode(output_tokens, skip_special_tokens=True)
-    print('BEBE decode', output_texts)
+    # debug
+    print('BEBE output_texts', output_texts)
 
     # remove input from generation
     gen_text = output_texts[0][len(input_prompt):]
     # fix AI char name
-    gen_text = gen_text.replace("<BOT>:", f"{char.name}:")
-
+    gen_text = gen_text.replace("<BOT>:", f"{persona.name}:")
     gen_text = get_single_reply(gen_text)
-    print('BEBE reply', gen_text)
+    print('BEBE prompt/reply', f"You: *{input_prompt}*\n{gen_text}")
 
     return {
         "reply": gen_text,
-        "new_history_entry": f"You: *{input_text}*\n{gen_text}"
+        "new_history_entry": f"You: *{input_prompt}*\n{gen_text}"
     }
+
+# local debug
+"""
+loaded_blob = model_fn("./")
+request_body = {
+    "message": "Ola Yuki!",
+    "chat_history": [],
+}
+predict_fn(request_body, loaded_blob)
+
+request_body["persona_id"] = "yuki_hinashi_en"
+predict_fn(request_body, loaded_blob)
+
+request_body["persona_id"] = "yuki_hinashi_en2"
+predict_fn(request_body, loaded_blob)
+"""

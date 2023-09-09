@@ -3,7 +3,7 @@ import os, shutil, tarfile
 
 import boto3
 import torch
-from transformers import GPTJForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer
 from torchinfo import summary
 
 s3 = boto3.resource("s3")
@@ -17,16 +17,18 @@ config = TransferConfig()
 model_auth_token = None
 if "HF_ACCESS_TOKEN" in os.environ:
     model_auth_token = os.environ["HF_ACCESS_TOKEN"]
+else:
+    print("  HF_ACCESS_TOKEN env variable not defined. No access token used!")
 
-model_url = "PygmalionAI/pygmalion-6b"
-model_basename = os.path.basename(model_url) # e.g.pygmalion-6b
+model_url = "meta-llama/Llama-2-7b-chat-hf"
+model_basename = os.path.basename(model_url)
 
 today_str = datetime.now().strftime("%b%d")  # e.g. sep01, aug28
 out_model_name = f"{model_basename}-{today_str}".lower()
 
 def load_model():
     print(f"{datetime.now()} Loading model...")
-    model = GPTJForCausalLM.from_pretrained(model_url,
+    model = AutoModelForCausalLM.from_pretrained(model_url,
                                             #device_map="auto",
                                             offload_folder="offload",
                                             #revision="float16",
