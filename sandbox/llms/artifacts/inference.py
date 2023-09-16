@@ -9,6 +9,8 @@ import os, requests, sys, yaml
 import torch
 from transformers import AutoTokenizer
 
+cuda_device = "cuda:0"
+
 class ClassFromDict(dict):
     def __getattr__(self, attr):
         if attr in self:
@@ -76,7 +78,6 @@ def model_fn(model_dir, debug_skip_model=False):
 
     if torch.cuda.is_available():
         print(f"{datetime.now()} BEBE CUDA Available")
-        device = "cuda:0"
     else:
         print(f"{datetime.now()} BEBE CUDA NOT Available")
 
@@ -88,9 +89,9 @@ def model_fn(model_dir, debug_skip_model=False):
         model = torch.load(model_path)
     tokenizer = AutoTokenizer.from_pretrained(model_dir)
 
-    print(f"{datetime.now()} BEBE To CUDA")
-    if model != None:
-        model = model.to(device)
+    if model != None and torch.cuda.is_available():
+        print(f"{datetime.now()} BEBE To CUDA")
+        model = model.to(cuda_device)
 
     print(f"{datetime.now()} BEBE garbage collect")
     torch.cuda.empty_cache()
@@ -151,8 +152,9 @@ def predict_fn(request_body, loaded_blob):
     tokenizer.pad_token = tokenizer.eos_token
     input_tokens = tokenizer(full_prompt, return_tensors="pt")
 
-    input_ids = input_tokens.input_ids.to("cuda:0")
-    input_attention_mask = input_tokens.attention_mask.to("cuda:0")
+    if torch.cuda.is_available():
+        input_ids = input_tokens.input_ids.to(cuda_device)
+        input_attention_mask = input_tokens.attention_mask.to(cuda_device)
 
     predict_params = {
         "do_sample": True,
@@ -190,19 +192,23 @@ def predict_fn(request_body, loaded_blob):
     }
 
 # local debug
-if __name__ == "__main__" and len(sys.argv) == 2 and sys.argv[1] == "debug":
-    loaded_blob = model_fn("./", True)
-    request_body = {
-        "message": "Ola Yuki!",
-        "chat_history": [],
-    }
-    predict_fn(request_body, loaded_blob)
+if __name__ == "__main__" and len(sys.argv) == 2:
+    if sys.argv[1] == "debug":
+        loaded_blob = model_fn("./", True)
+        request_body = {
+            "message": "Ola Yuki!",
+            "chat_history": [],
+        }
+        predict_fn(request_body, loaded_blob)
 
-    request_body["persona_id"] = "custom2"
-    predict_fn(request_body, loaded_blob)
+        request_body["persona_id"] = "custom2"
+        predict_fn(request_body, loaded_blob)
 
-    request_body["persona_id"] = "yuki_hinashi_en"
-    predict_fn(request_body, loaded_blob)
+        request_body["persona_id"] = "yuki_hinashi_en"
+        predict_fn(request_body, loaded_blob)
 
-    request_body["persona_id"] = "yuki_hinashi_en2"
-    predict_fn(request_body, loaded_blob)
+        request_body["persona_id"] = "yuki_hinashi_en2"
+        predict_fn(request_body, loaded_blob)
+    elif sys.argv[1] == "summary":
+        loaded_blob = model_fn("./")
+        print(loaded_blob["model"])

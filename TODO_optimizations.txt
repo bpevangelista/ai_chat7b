@@ -1,0 +1,75 @@
+********** GPU
+= Flash Attention
+
+
+********** CPU
+USE_OPENMP=0 # default 1
+USE_TBB=1
+BLAS=MKL
+
+# default threads # is CPU core #
+
+= BLAS (Basic Linear Algebra Subprograms)
+  = OpenBLAS - open-source BLAS
+  = MKL (Intel Maths Kernel) - optimised numerical libraries including BLAS, LAPACK, and ScaLAPACK
+  = cuBLAS (Cuda BLAS) - GPU-accelerated implementation of BLAS
+= MKLDNN - open-source optimized Deep Neural Networks primitives. Can link with BLAS or MKL
+
+
+********** MEMORY
+GPTJForCausalLM
+= Multi-Attention Heads
+= MLP Multi Language Processing
+= K, V, Q, ProjOut
+
+n_head 16
+n_layer 28 # hidden layers
+n_embd 4096 # dim emb and hidden states (hidden_size = n_embd)
+rotary_dim 64
+vocab_size * embed_dim (num embeddings)
+
+400MB word embeddings
+
+
+********** COST
+
+********** TEMP
+
+GPTJAttention
+16M (k_proj): Linear(in_features=4096, out_features=4096, bias=False)
+16M (v_proj): Linear(in_features=4096, out_features=4096, bias=False)
+16M (q_proj): Linear(in_features=4096, out_features=4096, bias=False)
+16M (out_proj): Linear(in_features=4096, out_features=4096, bias=False)
+GPTJMLP
+64M (fc_in): Linear(in_features=4096, out_features=16384, bias=True)
+64M (fc_out): Linear(in_features=16384, out_features=4096, bias=True)
+~400MB (200M*f16) per-hidden-layer
+
+200M (wte): Embedding(50400, 4096)
+~400MB (200M*f16) besides layers
+
+---- 11,273 MB ~11.01GB
+GPTJModel(
+  (wte): Embedding(50400, 4096)
+  (drop): Dropout(p=0.0, inplace=False)
+  (h): ModuleList(
+    (0-27): 28 x GPTJBlock(
+      (ln_1): LayerNorm((4096,), eps=1e-05, elementwise_affine=True)
+      (attn): GPTJAttention(
+        (attn_dropout): Dropout(p=0.0, inplace=False)
+        (resid_dropout): Dropout(p=0.0, inplace=False)
+        (k_proj): Linear(in_features=4096, out_features=4096, bias=False)
+        (v_proj): Linear(in_features=4096, out_features=4096, bias=False)
+        (q_proj): Linear(in_features=4096, out_features=4096, bias=False)
+        (out_proj): Linear(in_features=4096, out_features=4096, bias=False)
+      )
+      (mlp): GPTJMLP(
+        (fc_in): Linear(in_features=4096, out_features=16384, bias=True)
+        (fc_out): Linear(in_features=16384, out_features=4096, bias=True)
+        (act): NewGELUActivation()
+        (dropout): Dropout(p=0.0, inplace=False)
+      )
+    )
+  )
+  (ln_f): LayerNorm((4096,), eps=1e-05, elementwise_affine=True)
+)

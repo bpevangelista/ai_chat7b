@@ -2,6 +2,7 @@ from datetime import datetime
 import os, sys
 
 import boto3
+from sagemaker import image_uris # sagemaker only used for images
 
 region = "us-west-2"
 role = "SageMakerFullAccessRole"
@@ -28,31 +29,21 @@ def create_endpoint(model_name, instance_type):
     print(f"{datetime.now()} Retrieving image...")
     image_uri = "459678513027.dkr.ecr.us-west-2.amazonaws.com/hugging-pytorch-inference"
 
+    """
     # AWS containers
     # https://github.com/aws/deep-learning-containers/tree/master
-    """
     image_uri = image_uris.retrieve(
         framework="huggingface", # huggingface, pytorch, tensorflow, djl-deepspeed
         region=region,
         version="4.28", # transformers version (start on 4.28, but require 4.31)
-        #version="4.31", # required for to_bettertransform
         py_version="py310",
         instance_type=instance_type,
         image_scope="inference",
         base_framework_version="pytorch2.0",
     )
-
-    image_uri = image_uris.retrieve(
-        framework="pytorch",
-        region=region,
-        version="2.0",
-        py_version="py310",
-        instance_type=instance_type,
-        image_scope="inference",
-    )
-    """
     print(f"  {image_uri}")
-
+    """
+    
     print(f"{datetime.now()} Creating model...")
     sagemaker_model = sm_client.create_model(
         ModelName=model_name,
@@ -141,9 +132,13 @@ def main():
     if dev_or_prod == "prod":
         instance_name = "ml.p3.2xlarge"     # usd 3.8
     else:
+        instance_name = "ml.t2.2xlarge"   # usd 0.445
         #instance_name = "ml.g4dn.xlarge"   # usd $0.7364 ($0.5260 as ec2)
-        instance_name = "ml.g4dn.2xlarge"   # usd 0.94
+        #instance_name = "ml.g4dn.2xlarge"   # usd 0.94
         #instance_name = "ml.g5.2xlarge"     # usd 1.5
+
+        # Not currently supported
+        #instance_name = "ml.m6g.2xlarge"   # usd 0.37 (no hugging support)
 
     print(f"  --> {instance_name} (selected)")
     upload_latest_artifacts(model_name)

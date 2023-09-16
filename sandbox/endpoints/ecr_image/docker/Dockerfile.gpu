@@ -22,7 +22,7 @@ ARG OPEN_MPI_VERSION=4.1.5
 ARG CUBLAS_VERSION=11.11.3.6
 ARG CUDNN_VERSION=8.8.0.121
 
-# BEBE
+# BEBE - Using latest PyTorch instead
 # PyTorch Binaries and versions.
 #ARG TORCH_URL=https://aws-pytorch-unified-cicd-binaries.s3.us-west-2.amazonaws.com/r2.0.0_inference/cu118_py310/torch-2.0.0%2Bcu118-cp310-cp310-linux_x86_64.whl
 #ARG TORCHVISION_URL=https://aws-pytorch-unified-cicd-binaries.s3.us-west-2.amazonaws.com/r2.0.0_inference/cu118_py310/torchvision-0.15.1%2Bcu118-cp310-cp310-linux_x86_64.whl
@@ -44,7 +44,7 @@ ENV TEMP=/home/model-server/tmp
 ENV MKL_THREADING_LAYER=GNU
 ENV DLC_CONTAINER_TYPE=inference
 
-# BEBE
+# BEBE - defining Hugging Face Task HF_TASK
 ENV HF_TASK=text-generation
 
 # BEBE
@@ -101,7 +101,7 @@ RUN apt-get update \
  && apt-get clean
 
 # Install NCCL
-# BEBE
+# BEBE - (multi-GPU training) communication primitives optimized for many GPUs
 #RUN cd /tmp \
 # && git clone https://github.com/NVIDIA/nccl.git -b v${NCCL_VERSION}-1 \
 # && cd nccl \
