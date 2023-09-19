@@ -3,10 +3,11 @@ from datetime import datetime
 # Update packages
 print(f"{datetime.now()} BEBE pip install packages...")
 import subprocess
-subprocess.run(["pip", "install", "-r", "requirements.txt"])
+#subprocess.run(["pip", "install", "-r", "requirements.txt"])
 
-import os, requests, sys, yaml
+import os, re, requests, sys, yaml
 import torch
+from enum import Enum
 from transformers import AutoTokenizer
 
 cuda_device = "cuda:0"
@@ -16,6 +17,8 @@ class ClassFromDict(dict):
         if attr in self:
             return self[attr]
         raise AttributeError(f"'{type(self).__name__}' object has no attribute '{attr}'")
+    def __setattr__(self, attr, value):
+        self[attr] = value
 
 def get_single_reply(text):
     # remove special tokens
@@ -60,6 +63,66 @@ def copy_over_gdoc_persona():
         except Exception as e:
             print(f"  error: {gdoc_in}-->{gdoc_out} {e}")
 
+
+class MLModelType(Enum):
+    GPTJ = "gptj"
+    LLAMA2 = "llama2"
+
+def clean_multi_spaces(str):
+    new_str = re.sub(r"\n+", "\n", re.sub(r"[ \t]+", " ", str.strip()))
+    return re.sub(r"\n ", "\n", new_str)
+
+def update_persona_for_gptj(persona):
+    new_history = persona.hidden_history
+    new_history = re.sub(r"{{user}}", "You: ", new_history)
+    new_history = re.sub(r"{{model}}", f"{persona.name}: ", new_history)
+    if "hidden_history" in persona:
+        del persona["hidden_history"]
+    
+    persona.description = clean_multi_spaces(f"""
+    {persona.name}'s Persona: {persona.description}
+    <START>
+    {new_history}
+    """)
+    
+    print(persona)
+    return persona
+
+
+def update_persona_for_llama2(persona):
+    new_history = persona.hidden_history
+    new_history = re.sub(r"{{user}}", "<|user|>", new_history)
+    new_history = re.sub(r"{{model}}", "<|model|>", new_history)
+    if "hidden_history" in persona:
+        del persona["hidden_history"]
+
+    persona.description = clean_multi_spaces(f"""
+    <|system|>Enter RP mode. Pretend to be {{{{{persona.name}}}}} whose persona follows:
+    {persona.description}
+    You shall reply to the user while staying in character, and generate long responses.
+    {new_history}
+    """)
+
+    print(persona)
+    return persona
+
+def get_persona_for_model(yaml_data, ml_model_type):
+    persona = ClassFromDict(yaml.safe_load(yaml_data))
+    for attr in dir(persona):
+        attr_value = getattr(persona, attr)
+        if isinstance(attr_value, str):
+            setattr(persona, attr, clean_multi_spaces(attr_value))
+
+    if ml_model_type == MLModelType.GPTJ:
+        return update_persona_for_gptj(persona)
+    elif ml_model_type == MLModelType.LLAMA2:
+        return update_persona_for_llama2(persona)
+    else:
+        # error and default to llama2
+        print(f"BEBE error! Invalid Model Type {ml_model_type}")
+        return update_persona_for_llama2(persona)
+
+
 def load_all_personas():
     personas = {}
     listdir = os.listdir()
@@ -68,10 +131,13 @@ def load_all_personas():
         try:
             with open(yaml_file, "r") as yaml_data:
                 key = os.path.splitext(os.path.basename(yaml_file))[0]
-                personas[key] = ClassFromDict(yaml.safe_load(yaml_data))
-        except yaml.YAMLError as e:
-            print(f"  error reading: {filename} {e}")
+                personas[key] = get_persona_for_model(yaml_data, MLModelType.LLAMA2)
+        except Exception as e:
+            print(f"  error reading: {yaml_file} {e}")
+    if len(personas) < 1:
+        print(f"  error no persona found!")
     return personas
+
 
 def model_fn(model_dir, debug_skip_model=False):
     print(f"{datetime.now()} BEBE model_fn", model_dir)
@@ -130,14 +196,15 @@ def predict_fn(request_body, loaded_blob):
         response = requests.get(f"https://docs.google.com/document/d/{gdoc_id}/export?format=txt")
         if response.status_code == 200:
             try:
-                personas[persona_id] = ClassFromDict(yaml.safe_load(response.content))
+                personas[persona_id] = get_persona_for_model(response.content, MLModelType.LLAMA2)
             except Exception as e:
                 print(f"  error yaml load: {gdoc_id} {e}")
         else:
             print(f"  error response: {gdoc_id} {response.status_code}")
 
-    # get correct persona
-    persona = personas.get(persona_id, next(iter(personas.values())))
+    # get persona_if or first persona
+    first_persona = next(iter(personas.values()))
+    persona = personas.get(persona_id, first_persona)
 
     # greeting shortcut
     if input_message == "" and chat_history == "":
@@ -174,7 +241,8 @@ def predict_fn(request_body, loaded_blob):
         return None
 
     output_tokens = model.generate(input_ids, **predict_params)
-    output_texts = tokenizer.batch_decode(output_tokens, skip_special_tokens=True)
+    #output_texts = tokenizer.batch_decode(output_tokens, skip_special_tokens=True)
+    output_texts = tokenizer.batch_decode(output_tokens, skip_special_tokens=False)
     # debug
     print('BEBE output_texts', output_texts)
 
@@ -185,6 +253,8 @@ def predict_fn(request_body, loaded_blob):
     gen_text = get_single_reply(gen_text)
     new_history_entry = f"You: *{input_message}*\n{gen_text}"
     print('BEBE prompt/reply', new_history_entry)
+
+    torch.cuda.empty_cache()
 
     return {
         "reply": gen_text,
@@ -201,14 +271,19 @@ if __name__ == "__main__" and len(sys.argv) == 2:
         }
         predict_fn(request_body, loaded_blob)
 
+        request_body["persona_id"] = "wrong-key"
+        predict_fn(request_body, loaded_blob)
+        request_body["persona_id"] = "custom1"
+        predict_fn(request_body, loaded_blob)
         request_body["persona_id"] = "custom2"
         predict_fn(request_body, loaded_blob)
-
         request_body["persona_id"] = "yuki_hinashi_en"
         predict_fn(request_body, loaded_blob)
-
-        request_body["persona_id"] = "yuki_hinashi_en2"
+        request_body["persona_id"] = "yuki_hinashi_en_v0"
         predict_fn(request_body, loaded_blob)
+
+        #request_body["persona_id"] = "yuki_hinashi_en2"
+        #predict_fn(request_body, loaded_blob)
     elif sys.argv[1] == "summary":
         loaded_blob = model_fn("./")
         print(loaded_blob["model"])

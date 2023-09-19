@@ -1,5 +1,10 @@
+**** sep18 goal
+= create llama2 endpoint
+= support pygmalion & llama2 syntax
+= aws cut cost in half
 
-**** sep11 (goal for this date)
+
+**** sep11 goal
 = client
   = client multi-persona support
   = doesn't crash with endpoint offline
@@ -7,7 +12,6 @@
 = server
   = endpoint multi-persona support
   = better interaction logging for retraining
-  = create llama2 endpoint
 
 
 **** sep01 (pto)

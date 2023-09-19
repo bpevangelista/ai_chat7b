@@ -69,7 +69,8 @@ def invoke_llm_generation(message, chat_history, persona_id):
     new_history_entry = blob["new_history_entry"]
     return reply, new_history_entry
 
-def get_first_message(persona_id):
+def get_first_message(chat_history, persona_id):
+    chat_history.clear()
     reply = "This bot is currently offline"
     try:
         reply, new_history_entry = invoke_llm_generation("", [], persona_id)
@@ -104,7 +105,7 @@ with gr.Blocks(css=custom_css) as app:
     with gr.Row():
         persona = gr.Dropdown(personas, value=personas[0], show_label=False, container=False, scale=3)
         reload = gr.Button("Reload Persona", scale=1)
-
+    
     chat_history = gr.State([])
     chatbot = gr.Chatbot(
         bubble_full_width=False,
@@ -124,10 +125,10 @@ with gr.Blocks(css=custom_css) as app:
     )
 
     reload.click(lambda:[None, None], None, [chatbot, textbox], queue=False).then(
-        get_first_message, persona, chatbot
+        get_first_message, [chat_history, persona], chatbot
     )
 
-    app.load(get_first_message, persona, chatbot)
+    app.load(get_first_message, [chat_history, persona], chatbot)
 
 app.queue() # web-sockets
 app.launch()

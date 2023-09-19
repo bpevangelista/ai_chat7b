@@ -12,25 +12,31 @@ s3_bucket_name = "sagemaker-hf-inference"
 s3 = boto3.client("s3")
 sm_client = boto3.client("sagemaker")
 
-def create_endpoint(model_name, instance_type):
+def cleanup_endpoint(model_name):
     print(f"{datetime.now()} Cleaning up endpoints...")
     try:
         sm_client.delete_endpoint(EndpointName=f"{model_name}-endpoint")
     except Exception as e:
         pass
-
     try:
         sm_client.delete_endpoint_config(EndpointConfigName=f"{model_name}-config")
+    except Exception as e:
+        pass
+    try:
         sm_client.delete_model(ModelName=model_name)
     except Exception as e:
         pass
 
+def create_endpoint(model_name, instance_type):
+    cleanup_endpoint(model_name)
+    
     # My custom docker container
     print(f"{datetime.now()} Retrieving image...")
     image_uri = "459678513027.dkr.ecr.us-west-2.amazonaws.com/hugging-pytorch-inference"
 
     """
     # AWS containers
+    # https://docs.aws.amazon.com/sagemaker/latest/dg/pre-built-containers-frameworks-deep-learning.html
     # https://github.com/aws/deep-learning-containers/tree/master
     image_uri = image_uris.retrieve(
         framework="huggingface", # huggingface, pytorch, tensorflow, djl-deepspeed
@@ -41,8 +47,18 @@ def create_endpoint(model_name, instance_type):
         image_scope="inference",
         base_framework_version="pytorch2.0",
     )
-    print(f"  {image_uri}")
     """
+    """
+    image_uri = image_uris.retrieve(
+        framework="pytorch", # huggingface, pytorch, tensorflow, djl-deepspeed
+        region=region,
+        version="1.12.1",
+        py_version="py38",
+        instance_type=instance_type,
+        image_scope="inference",
+    )
+    """
+    print(f"  {image_uri}")
     
     print(f"{datetime.now()} Creating model...")
     sagemaker_model = sm_client.create_model(
@@ -103,26 +119,26 @@ def upload_latest_artifacts(model_name):
             print(f"  {src_path}-->{dst_path}")
             s3.upload_file(src_path, s3_bucket_name, dst_path)
 
-def main():
-    if len(sys.argv) < 3 or len(sys.argv) > 4 or sys.argv[2] not in ["dev", "prod"]:
-        print("usage: python create_endpoint.py [model_name] [dev|prod] [optional model_version]")
-        print("usage: python create_endpoint.py pygmalion-6b dev aug29")
-        exit(1)
-
-    model_prefix = sys.argv[1]
-    dev_or_prod = sys.argv[2]
-    today_str = datetime.now().strftime("%b%d").lower()
-    model_suffix = sys.argv[3] if len(sys.argv) >= 4 else today_str
-    model_name = f"{model_prefix}-{model_suffix}"
-
+def list_models():
     print(f"{datetime.now()} Listing models...")
-    s3_objects = s3.list_objects_v2(Bucket=s3_bucket_name, Prefix=model_prefix, Delimiter="/")
+    s3_objects = s3.list_objects_v2(Bucket=s3_bucket_name, Prefix="", Delimiter="/")
     s3_models = []
     if "CommonPrefixes" in s3_objects:
         s3_objects = s3_objects["CommonPrefixes"]
         s3_models = [ item["Prefix"][:-1] for item in s3_objects]
-    print(f"  {s3_models}")
+    return s3_models
 
+def main():
+    if len(sys.argv) < 3 or len(sys.argv) > 4 or sys.argv[2] not in ["dev-cpu", "dev-gpu", "prod"]:
+        print("usage: python create_endpoint.py [model_name] [dev-cpu|dev-gpu|prod]")
+        print("usage: python create_endpoint.py pygmalion-6b-sep01 dev")
+        exit(1)
+
+    model_name = sys.argv[1]
+    dev_or_prod = sys.argv[2]
+
+    s3_models = list_models()
+    print(f"  {s3_models}")
     if model_name in s3_models:
         print(f"  --> {model_name} (selected)")
     else:
@@ -131,14 +147,12 @@ def main():
 
     if dev_or_prod == "prod":
         instance_name = "ml.p3.2xlarge"     # usd 3.8
-    else:
-        instance_name = "ml.t2.2xlarge"   # usd 0.445
-        #instance_name = "ml.g4dn.xlarge"   # usd $0.7364 ($0.5260 as ec2)
-        #instance_name = "ml.g4dn.2xlarge"   # usd 0.94
-        #instance_name = "ml.g5.2xlarge"     # usd 1.5
-
-        # Not currently supported
-        #instance_name = "ml.m6g.2xlarge"   # usd 0.37 (no hugging support)
+    elif dev_or_prod == "dev-gpu":
+        instance_name = "ml.g4dn.xlarge"    # usd $0.7364 ($0.5260 as ec2)
+        #instance_name = "ml.g4dn.2xlarge"   # gpu + works, usd 0.94
+    elif dev_or_prod == "dev-cpu":
+        #instance_name = "ml.c7g.2xlarge"    # usd 0.37
+        instance_name = "ml.c6i.2xlarge"    # usd 0.37
 
     print(f"  --> {instance_name} (selected)")
     upload_latest_artifacts(model_name)
