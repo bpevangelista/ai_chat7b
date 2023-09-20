@@ -1,0 +1,15 @@
+**** Goog - free k8s mgmt
+e2-standard-4               CPU 4   RAM 16      GB 32       $0.138 ($101)
+n1-highmen-4    GPU 1xT4    CPU 4   RAM 26      GB 32       $0.587 ($428)
+
+**** Microsoft - free k8s mgmt
+D4as v4                     CPU 4   RAM 16      GB 32       $0.192 ($140)
+NC4as T4 v3     GPU 1xT4    CPU 4   RAM 28      GB 180      $0.526 ($384)
+
+**** Amzn - free k8s mgmt
+c6i.2xlarge                 CPU 8   RAM 16          EBS     $0.37  ($270)
+g4dn.xlarge     GPU 1xT4    CPU 4   RAM 16      SSD 125     $0.526 ($383)
+g4dn.2xlarge    GPU 1xT4    CPU 8   RAM 32      SSD 225     $0.75  ($547)
+
+Vast.ai
+m10515          GPU 1x4090  CPU 12  RAM 32      SSD 300     ~250 USD/mo
