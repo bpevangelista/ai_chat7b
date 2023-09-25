@@ -3,10 +3,21 @@ e2-standard-4               CPU 4   RAM 16      GB 32       $0.138 ($101)
 n1-highmen-4    GPU 1xT4    CPU 4   RAM 26      GB 32       $0.587 ($428)
 
 **** Microsoft - free k8s mgmt
+# p = arm, a = amd, i = intel (d = disk present)
+B2als_v2 or D2ps_v5
+D4pds_v5                    CPU 4   RAM 16      GB 150      $0.180 ($132) ARM
 D4as v4                     CPU 4   RAM 16      GB 32       $0.192 ($140)
 NC4as T4 v3     GPU 1xT4    CPU 4   RAM 28      GB 180      $0.526 ($384)
 
+E2as_v5
+
+
 **** Amzn - free k8s mgmt
+EKS                                                                  $73
+m5a.large                   CPU 2   RAM  8          EBS              $62
+m5a.xlarge                  CPU 4   RAM 16          EBS            ($125) AMD
+g4dn.xlarge     GPU 1xT4    CPU 4   RAM 16      SSD 125     $0.526 ($383)
+
 c6i.2xlarge                 CPU 8   RAM 16          EBS     $0.37  ($270)
 g4dn.xlarge     GPU 1xT4    CPU 4   RAM 16      SSD 125     $0.526 ($383)
 g4dn.2xlarge    GPU 1xT4    CPU 8   RAM 32      SSD 225     $0.75  ($547)
