@@ -1,0 +1,35 @@
+= setup your inference in aws in 10 minutes
+
+= Attention is all you need course
+
+
+*******
+
+I can have many workers, need to enable preload (fork after loading)
+Or I can have one worker, need to disable preload (fork then pre-load, making sure CUDA context is in the single worker)
+
+gunicorn will handle workers dying but it has a unique timeout, probably need to change it from initialization to responding in the middle of things
+
+Also, if I get multiple back to back connections the worker fails the timeout and dies
+
+*******
+I think there's a process running for the model inference, and then a flask multi-process running as well, and it chats with the main process so that it doesn't need to load model in memory many times
+
+*******
+
+Ok, so gunicorn allows me to easily have single threaded multi-processes, which is exactly what I want. I don't wand a single process because they may all block in some primitive. I don't want multi-thread because I already have two processes per CPU core (enough processes).
+
+The issue is that CUDA needs to be inicialized in the worker processes, and initializing per worker will mean GPU memory per worker which I do not want.
+
+Thus, I probably want to limit worker processes to one? similar o MMX? 
+
+*******
+pip install azure-storage-blob
+
+from azure.storage.blob import BlobClient
+
+blob = BlobClient.from_connection_string(conn_str="<connection_string>", container_name="mycontainer", blob_name="my_blob")
+
+with open("./BlockDestination.txt", "wb") as my_blob:
+    blob_data = blob.download_blob()
+    blob_data.readinto(my_blob)

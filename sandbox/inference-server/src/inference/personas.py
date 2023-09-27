@@ -1,6 +1,6 @@
 from . import log
 
-import os, re, yaml
+import json, os, re, yaml
 
 def _clean_spaces(str):
     new_str = re.sub(r"\n+", "\n", re.sub(r"[ \t]+", " ", str.strip()))
@@ -34,7 +34,7 @@ class ChatModelTranslator():
             ChatModelTranslator.to_gptj(persona)
         elif persona.model_type != None:
             raise Exception(f"unknown model_type {persona.model_type}")
-        
+
     def to_llama2(persona):
         new_history = re.sub(r"{{user}}", "<|user|>", persona.hidden_history)
         new_history = re.sub(r"{{model}}", "<|model|>", new_history)
@@ -47,7 +47,7 @@ class ChatModelTranslator():
         {new_history}
         """)
         #print(persona)
-    
+
     def to_gptj(persona):
         new_history = re.sub(r"{{user}}", "You: ", persona.hidden_history)
         new_history = re.sub(r"{{model}}", f"{persona.name}: ", new_history)
@@ -59,7 +59,7 @@ class ChatModelTranslator():
         {new_history}
         """)
         #print(persona)
-    
+
     def get_chat_tokens(persona):
         if persona.model_type == "llama2":
             return ChatModelTokens("<|user|>", "<|model|>")
@@ -70,11 +70,14 @@ class ChatModelTranslator():
 
     def make_safe_input(message):
         return message
-    
+
     def build_prompt(message, chat_history, persona):
         message = ChatModelTranslator.make_safe_input(message)
-        return f"{persona.description}\n{chat_history}\n{persona.tokens.user}{message}\n"
-    
+        preamble = f"{persona.description}\n{chat_history}\n"
+        prompt = f"{persona.tokens.user} {message}\n{persona.tokens.model}"
+        full_prompt = f"{preamble}{prompt}"
+        return full_prompt, prompt
+
     def get_single_reply(text):
         # remove additional prompt/reply generation
         index = text.find("{user}:")
@@ -89,9 +92,8 @@ class ChatModelTranslator():
         index = max(text.rfind(char) for char in end_phrase)
         if index != -1:
             text = text[:index + 1]
-
         return text.strip()
-        
+
     def get_reply(gen_text, builded_prompt, persona):
         # remove prompt
         text = gen_text[len(builded_prompt):]
@@ -111,7 +113,7 @@ class ChatModelTranslator():
         text = text.replace("the woman", "you")
         return text
 
-    
+
 class ChatPersona():
     def __init__(self, yaml_data, model_type):
         self.model_type = model_type
@@ -123,13 +125,15 @@ class ChatPersona():
         self.first_message = yaml_data["first_message"]
         self.tokens = ChatModelTranslator.get_chat_tokens(self)
         ChatModelTranslator.to_model(self)
-    
+
     @staticmethod
     def from_yaml(yaml_data, model_type):
         yaml_object = yaml.safe_load(yaml_data)
         return ChatPersona(yaml_object, model_type)
 
     def __str__(self):
+        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
+        """
         attributes = []
         for attr, value in vars(self).items():
             if isinstance(value, str):
@@ -139,6 +143,7 @@ class ChatPersona():
             attributes.append(f"{attr}={value}")
         attributes_str = ", ".join(attributes)
         return f"ChatPersona({attributes_str})"
+        """
 
     def build_prompt(self, input_message, chat_history):
         return ChatModelTranslator.build_prompt(input_message, chat_history, self)
@@ -158,9 +163,12 @@ class ChatPersonas():
         self.model_type = model_type
     
     def __str__(self):
+        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
+        """
         personas_str = ", ".join([f"'{key}': {str(value)}" for key, value in self.personas.items()])
         return f"ChatPersonas(personas: {{{personas_str}}}, model_type: {self.model_type})"
         #return f"ChatPersonas(\n{_str_format(self)})"
+        """
     
     @staticmethod
     def from_folder(folder=None, model_type=None):
@@ -178,7 +186,7 @@ class ChatPersonas():
                 print(f"  error reading: {yaml_file} {e}")
         if not personas:
             print("  error no persona found!")
-            
+
         return ChatPersonas(personas, model_type)
     
     def get(self, persona_id):

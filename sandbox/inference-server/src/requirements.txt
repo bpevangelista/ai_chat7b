@@ -1,0 +1,2 @@
+azure-storage-blob
+transformers==4.31
