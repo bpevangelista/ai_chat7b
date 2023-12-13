@@ -1,10 +1,9 @@
-**** sep18 goal
+**** sep w4
 = create llama2 endpoint
 = support pygmalion & llama2 syntax
 = aws cut cost in half
 
-
-**** sep11 goal
+**** sep w3
 = client
   = client multi-persona support
   = doesn't crash with endpoint offline
@@ -13,8 +12,7 @@
   = endpoint multi-persona support
   = better interaction logging for retraining
 
-
-**** sep01 (pto)
+**** sep w1
 = new instances added
 = everything running on CUDA
 = to_bettermodel() working
