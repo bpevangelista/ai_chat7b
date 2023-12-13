@@ -35,7 +35,7 @@ class InferenceModel():
         tokenizer.pad_token = tokenizer.eos_token
         _free_unused_memory()
 
-        if model and torch.cuda.is_available() and False:
+        if model and torch.cuda.is_available():
             log.info(f"model.to({cuda_device})")
             model_device = cuda_device
             model = model.to(model_device)
