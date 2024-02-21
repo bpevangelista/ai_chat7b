@@ -23,15 +23,21 @@ rotary_dim 64
 vocab_size * embed_dim (num embeddings)
 
 GPTJAttention
-16M (k_proj): Linear(in_features=4096, out_features=4096, bias=False)
-16M (v_proj): Linear(in_features=4096, out_features=4096, bias=False)
-16M (q_proj): Linear(in_features=4096, out_features=4096, bias=False)
+16M (q_proj):   Linear(in_features=4096, out_features=4096, bias=False)
+16M (k_proj):   Linear(in_features=4096, out_features=4096, bias=False)
+16M (v_proj):   Linear(in_features=4096, out_features=4096, bias=False)
 16M (out_proj): Linear(in_features=4096, out_features=4096, bias=False)
+~64M * f16 = 128MB
 
 GPTJMLP
-64M (fc_in): Linear(in_features=4096, out_features=16384, bias=True)
-64M (fc_out): Linear(in_features=16384, out_features=4096, bias=True)
-~400MB (200M*f16) per-hidden-layer
+ 8KB (ln_x):    LayerNorm(4096, bias=True)
+128M (fc_in):   Linear(in_features=4096, out_features=16384, bias=True)
+128M (fc_out):  Linear(in_features=16384, out_features=4096, bias=True)
+256M * f16 = 512MB
+
+GPTJModel
+ 8KB (ln_f):    LayerNorm(4096, bias=True)
+
 
 200M (wte): Embedding(50400, 4096)
 ~400MB (200M*f16) besides layers
