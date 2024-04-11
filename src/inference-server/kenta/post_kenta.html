@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <div id="result"></div>
+
+  <script>
+const prompt = `
+<s>[INST] <<SYS>>
+You are a sales assistant for an online store. Keep all responses to less than 100 characters.
+<</SYS>>
+
+This customer has visited the store before.
+Here are relevant products:
+
+id: 9107211813142
+title: Gift Card
+description: This is a gift card for the store
+variants:
+  - price: \\"10.00\\"
+    title: $10
+  - price: \\"25.00\\"
+    title: $25
+  - price: \\"50.00\\"
+    title: $50
+  - price: \\"100.00\\"
+    title: $100
+
+id: 9107212140822
+title: Selling Plans Ski Wax
+description: null
+variants:
+  - price: \\"24.95\\"
+    title: Selling Plans Ski Wax
+  - price: \\"49.95\\"
+    title: Special Selling Plans Ski Wax
+  - price: \\"9.95\\"
+    title: Sample Selling Plans Ski Wax
+
+id: 9107211878678
+title: The Inventory Not Tracked Snowboard
+description: null
+variants:
+  - price: \\"949.95\\"
+    title: Default Title
+
+id: 9107212075286
+title: \\"The Collection Snowboard: Oxygen\\"
+description: null
+variants:
+  - price: \\"1025.00\\"
+    title: Default Title
+
+[/INST]
+`;
+
+fetch('https://yrw865qfm2kjcx-8080.proxy.runpod.net/v1/completions', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({ 'prompt': prompt })
+})
+.then(response => response.json())
+.then(data => document.getElementById('result').textContent = JSON.stringify(data.messages[0].content))
+.catch(error => console.error('Error:', error));
+  </script>
+</body>
+</html>
