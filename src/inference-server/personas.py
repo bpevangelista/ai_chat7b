@@ -79,7 +79,7 @@ class ChatPersonas:
     def _make_safe_prompt(self, prompt: str) -> str:
         return prompt
 
-    def _make_safe_history(self, chat_history: list[str], max_history_words: int = 128) -> str:
+    def _make_safe_history(self, chat_history: list[str], max_history_words: int = 960) -> str:
         flatten_chat_history = ''
         total_word_count = 0
 
@@ -90,7 +90,11 @@ class ChatPersonas:
             if word_count + total_word_count > max_history_words:
                 break
             #flatten_chat_history = prompt_reply + flatten_chat_history
-            flatten_chat_history = f'### Instruction:\n{prompt}\n### Response:\n{reply}\n' + flatten_chat_history
+            #flatten_chat_history = f'### Instruction:\n{prompt}\n### Response:\n{reply}\n' + flatten_chat_history
+
+            #flatten_chat_history = f'[INST] {prompt} [/INST]{reply}\n' + flatten_chat_history
+            flatten_chat_history = f'\n{prompt} {reply}\n' + flatten_chat_history
+
             total_word_count = total_word_count + word_count
 
         if flatten_chat_history:
@@ -114,7 +118,7 @@ class ChatPersonas:
         preamble = self._get_prompt_preamble(persona_id)
         safe_prompt = self._make_safe_prompt(prompt)
         safe_history = self._make_safe_history(chat_history)
-        #return f'<s>[INST] <<SYS>>\n{preamble}\n<</SYS>>\n{safe_history}{safe_prompt}\n[/INST]'
+        return f'<s>[INST] <<SYS>>\n{preamble}{safe_history}\n<</SYS>>\n{safe_prompt}\n[/INST]'
         #return f'{preamble}\n{safe_history}### Instruction:\n{safe_prompt}\n### Response:\n'
-        return f'{preamble}{safe_history}### Instruction:\n{safe_prompt}\n### Response:\n'
+        #return f'{preamble}{safe_history}### Instruction:\n{safe_prompt}\n### Response:\n'
 
