@@ -6,12 +6,19 @@ import requests
 
 CHAT_ACCESS_KEY = os.environ.get("CHAT_ACCESS_KEY")
 CHAT_ENDPOINT_URI = os.environ.get("CHAT_ENDPOINT_URI")
+MULTI_PERSONAS_ENABLED = True
+
+DEFAULT_PERSONAS = [
+    "professor_willow_en",
+    "neighbor_justin_en",
+    "yuki_hinashi_en",
+    "yuki_hinashi_pt",
+    "custom1",
+    "custom2",
+]
+DEFAULT_PERSONA_STR = "professor_willow_en"
 
 custom_css = """
-:root {
-  --block-background-fill: transparent;
-}
-
 div[data-testid="block-label"] {
     display: none;
 }
@@ -28,11 +35,21 @@ div[data-testid="block-label"] {
     width: none;
 }
 
-.main {
-    background-image: url(https://media.discordapp.net/attachments/1210706446438768761/1210709974615851068/soij__Yuki_a_blond-haired_brown-eyed_girl_leans_against_a_wall__821d4d8d-2d1e-47a3-9662-6b7ac94f0f1b.png?ex=65eb8c87&is=65d91787&hm=50f3151529fd62c78bea0c657a7dcacf9ba7370d8fded75c58f1b262d28faf95&=&format=webp&quality=lossless&width=897&height=897);
-    background-size: 400px 800px;
-    width: 400px;
-    height: 800px;
+#chatbot {
+    background-image: url('https://huggingface.co/spaces/bevangelista/llm_prof_willow/resolve/main/professor_willow_mj_s.png');
+    background-size: 600px;
+    background-repeat: no-repeat;
+    background-position: center top;
+
+    border-radius: 20px;
+    flex-grow: 1; overflow: auto;
+    overflow: hidden;
+}
+
+
+#component-0 {
+    height: 600px;
+    width: 600px;
 }
 
 .message {
@@ -42,6 +59,7 @@ div[data-testid="block-label"] {
 
 .message-wrap {
     gap: var(--spacing-xl) !important;
+    opacity: 0.87 !important;
 }
 
 .user-row {
@@ -51,6 +69,9 @@ div[data-testid="block-label"] {
 
 
 def invoke_llm_generation(prompt: str, chat_history: list[str], persona_id: str):
+    if not CHAT_ENDPOINT_URI:
+        return None
+
     headers = {
         'Authorization': f'Bearer {CHAT_ACCESS_KEY}',
     }
@@ -70,14 +91,16 @@ def invoke_llm_generation(prompt: str, chat_history: list[str], persona_id: str)
     return None
 
 
-def get_first_message(chat_history, persona_id):
+def get_first_message(chat_history: list[str], persona_id: str):
     chat_history.clear()
     reply = "This bot is currently offline"
     try:
-        reply = invoke_llm_generation("", [], persona_id)
-        reply = reply[0] # TODO FIX show reply[0], 1s then reply[1]
+        result = invoke_llm_generation("", [], persona_id)
+        if result:
+            reply = result[0] # TODO FIX show reply[0], 1s then reply[1]
     except:
         pass
+
     return [(None, reply)]
 
 
@@ -100,19 +123,17 @@ def send_streaming(history, chat_history, persona_id):
 
 
 with gr.Blocks(css=custom_css) as app:
-    personas = [
-        "yuki_hinashi_en",
-        "neighbor_justin_en",
-        #"yuki_hinashi_pt",
-        "custom1",
-        "custom2",
-    ]
-    with gr.Row():
-        persona = gr.Dropdown(personas, value=personas[0], show_label=False, container=False, scale=3)
-        reload = gr.Button("Reload Persona", scale=1)
+    if MULTI_PERSONAS_ENABLED:
+        personas = DEFAULT_PERSONAS
+        with gr.Row():
+            persona = gr.Dropdown(personas, value=DEFAULT_PERSONA_STR, show_label=False, container=False, scale=3)
+            reload = gr.Button("Reload Persona", scale=1)
+    else:
+        persona = gr.Textbox(value=DEFAULT_PERSONA_STR, visible=False)
 
     chat_history = gr.State([])
     chatbot = gr.Chatbot(
+        elem_id='chatbot',
         bubble_full_width=False,
     )
 
@@ -125,12 +146,13 @@ with gr.Blocks(css=custom_css) as app:
         send_streaming, [chatbot, chat_history, persona], chatbot
     )
 
+    if MULTI_PERSONAS_ENABLED:
+        reload.click(lambda: [None, None], None, [chatbot, textbox], queue=False).then(
+            get_first_message, [chat_history, persona], chatbot
+        )
+
     textbox.submit(send_message, [chatbot, textbox], [chatbot, textbox], queue=False).then(
         send_streaming, [chatbot, chat_history, persona], chatbot
-    )
-
-    reload.click(lambda: [None, None], None, [chatbot, textbox], queue=False).then(
-        get_first_message, [chat_history, persona], chatbot
     )
 
     app.load(get_first_message, [chat_history, persona], chatbot)
