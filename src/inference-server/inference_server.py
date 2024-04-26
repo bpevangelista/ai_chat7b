@@ -15,10 +15,10 @@ from personas import ChatPersonas
 from post_processors import CompleteSentenceProcessor, BestOfProcessor, SingleResponseProcessor
 
 # MODEL_NAME = 'TheBloke/Llama-2-13B-chat-GPTQ',
-MODEL_NAME = 'TheBloke/MythoMax-L2-13B-GPTQ'
-
-
+# MODEL_NAME = 'TheBloke/MythoMax-L2-13B-GPTQ'
 # MODEL_NAME = 'TheBloke/Mythalion-13B-GPTQ'
+MODEL_NAME = 'bevangelista/Llama-2-13B-chat-GPTQ_Q128_B4_wiki'
+REWARD_MODEL_NAME = 'bevangelista/gpt2-chai-reward-oct23'
 
 class ChatCompletionsRequest(BaseModel):
     persona_id: str
@@ -61,11 +61,10 @@ class InferenceServerDeployment:
         self.processors = [
             SingleResponseProcessor(),
             CompleteSentenceProcessor(),
-            BestOfProcessor('ChaiML/reward_models_100_170000000_cp_498032'),
+            BestOfProcessor(REWARD_MODEL_NAME),
         ]
         self.personas = ChatPersonas()
-        # self.personas.load_all_from_folder('./personas')
-        self.personas.load_all_from_folder('./')
+        self.personas.load_all_from_folder('./personas')
         self.personas.load_from_gdoc('custom1', '1tRxEPX-b5nInMVdsr7hkIGrQ4h8Jm-x1-97yZx6dzwQ')
         self.personas.load_from_gdoc('custom2', '18HHK9UrT-OoezSULAJjil8fzWvs8vu_SS2xq5yVyqtA')
 
@@ -73,15 +72,16 @@ class InferenceServerDeployment:
     def get_sampling_params(user_params: dict | None = None):
         params = {
             'use_beam_search': False,
-            'temperature': 0.7,
+            'temperature': 0.8,
             'top_p': 0.8,
             'n': 4,
-            'max_tokens': 64,
+            'max_tokens': 96,
 
             # Trying
             'presence_penalty': 0.5,
             'frequency_penalty': 0.5,
-            'stopping_words': ['<\s>'],
+
+            #'stopping_words': ['<\s>'],
         }
         if user_params:
             params.update(user_params)
